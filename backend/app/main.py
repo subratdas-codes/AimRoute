@@ -1,7 +1,6 @@
 from fastapi import FastAPI
+from app.predict import router as predict_router
 
 app = FastAPI(title="CareerLens API")
 
-@app.get("/")
-def home():
-    return {"message": "CareerLens backend is running"}
+app.include_router(predict_router)
