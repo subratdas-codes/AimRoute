@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
 # Secret key (later you can move this to .env)
-SECRET_KEY = "careerlens_super_secret_key_123"
+SECRET_KEY = "aimroute_super_secret_key"
 
 # Algorithm used to sign token
 ALGORITHM = "HS256"
