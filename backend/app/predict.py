@@ -1,20 +1,19 @@
 import pickle
+import numpy as np
 from fastapi import APIRouter
 from pydantic import BaseModel
 from pathlib import Path
 
 router = APIRouter()
 
-# 🔹 Correct path to model.pkl
+# Load model
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MODEL_PATH = BASE_DIR / "mlmodel" / "model.pkl"
 
-# 🔹 Load model only once (when server starts)
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
 
-
-# 🔹 Input schema (for Swagger + validation)
+# Input schema
 class SkillInput(BaseModel):
     Python: int
     SQL: int
@@ -26,28 +25,33 @@ class SkillInput(BaseModel):
     Math: int
 
 
-# 🔹 Prediction API
 @router.post("/predict")
 def predict_career(data: SkillInput):
-    try:
-        input_data = [[
-            data.Python,
-            data.SQL,
-            data.HTML,
-            data.CSS,
-            data.Java,
-            data.Communication,
-            data.Logic,
-            data.Math
-        ]]
 
-        prediction = model.predict(input_data)[0]
+    input_data = np.array([[
+        data.Python,
+        data.SQL,
+        data.HTML,
+        data.CSS,
+        data.Java,
+        data.Communication,
+        data.Logic,
+        data.Math
+    ]])
 
-        return {
-            "Recommended Career": prediction
-        }
+    probabilities = model.predict_proba(input_data)[0]
+    classes = model.classes_
 
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
+    top_indices = np.argsort(probabilities)[-3:][::-1]
+
+    top_careers = []
+
+    for i in top_indices:
+        top_careers.append({
+            "career": classes[i],
+            "confidence": f"{round(probabilities[i]*100, 2)}%"
+        })
+
+    return {
+        "top_careers": top_careers
+    }
