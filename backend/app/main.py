@@ -2,28 +2,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.predict import router as predict_router
 
-# Create FastAPI app
 app = FastAPI(
-    title="CareerLens API",
+    title="AimRoute API",
     version="1.0.0",
-    description="ML-based Career Recommendation System"
+    description="AI-Based Career Guidance and Recommendation System"
 )
 
-# Enable CORS (for frontend connection)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # For development (React/HTML can connect)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Predict Router
 app.include_router(predict_router)
 
-# Root endpoint
 @app.get("/")
 def home():
     return {
-        "message": "CareerLens Backend is running successfully 🚀"
+        "message": "AimRoute Backend is running successfully 🚀"
     }
