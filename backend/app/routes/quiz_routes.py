@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal
 from app.models.question_model import Question
+from app.models.result_model import Result
 from app.schemas.quiz_schema import QuizSubmit
 from app.utils.dependencies import get_current_user
 
@@ -26,7 +27,8 @@ def get_questions(db: Session = Depends(get_db)):
 @router.post("/submit")
 def submit_quiz(
     quiz: QuizSubmit,
-    current_user: str = Depends(get_current_user)
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     score = 0
 
@@ -46,6 +48,16 @@ def submit_quiz(
         career = "Creative Field"
     else:
         career = "Medical / Life Sciences"
+
+    # 🔥 SAVE RESULT INTO DATABASE
+    new_result = Result(
+        user_email=current_user,
+        score=score,
+        recommended_career=career
+    )
+
+    db.add(new_result)
+    db.commit()
 
     return {
         "user_email": current_user,
