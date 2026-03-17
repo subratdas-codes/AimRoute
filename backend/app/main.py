@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Database
 from app.database.connection import engine
@@ -17,6 +19,14 @@ from app.routes import dashboard_routes
 
 # Create FastAPI app
 app = FastAPI(title="AimRoute API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # allow React frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Create all tables in MySQL
 Base.metadata.create_all(bind=engine)
