@@ -7,7 +7,7 @@ import icon3 from "../../assets/icon3.svg";
 import icon4 from "../../assets/icon4.svg";
 import icon5 from "../../assets/icon5.svg";
 import icon6 from "../../assets/icon6.svg";
-
+import CareerSection from "../../components/CareerSection";
 
 import Footer from "../../components/Footer";
 import HowItWorks from "../../components/HowItWorks";
@@ -25,17 +25,17 @@ function Home() {
           <h1 className="text-5xl font-bold text-gray-800 leading-tight">
             Discover Careers That <br />
             <span className="text-purple-600">Match Who You Are.</span>
-         </h1>
+          </h1>
 
           <p className="text-gray-600 text-lg max-w-lg">
-             Take a structured assessment and explore career paths tailored to your interests, strengths, and goals.
+            Take a structured assessment and explore career paths tailored to your interests, strengths, and goals.
           </p>
 
           <button
             onClick={() => navigate("/login")}
-            className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-2xl transition duration-300"
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
           >
-            Start Career Assessment 
+            Start Career Assessment
           </button>
         </div>
 
@@ -50,23 +50,41 @@ function Home() {
             className="relative z-10 w-[400px] h-[520px] object-contain drop-shadow-2xl"
           />
 
-          <img src={icon1} alt="icon1"
-            className="absolute top-5 left-10 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon1}
+            alt="icon1"
+            className="absolute top-5 left-10 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
-          <img src={icon5} alt="icon5"
-            className="absolute bottom-35 left-10 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon5}
+            alt="icon5"
+            className="absolute bottom-35 left-10 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
-          <img src={icon6} alt="icon6"
-            className="absolute bottom-2 left-8 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon6}
+            alt="icon6"
+            className="absolute bottom-2 left-8 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
-          <img src={icon2} alt="icon2"
-            className="absolute top-10 right-5 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon2}
+            alt="icon2"
+            className="absolute top-10 right-5 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
-          <img src={icon3} alt="icon3"
-            className="absolute bottom-35 right-6 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon3}
+            alt="icon3"
+            className="absolute bottom-35 right-6 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
-          <img src={icon4} alt="icon4"
-            className="absolute bottom-5 right-6 w-20 bg-gray-200 rounded-full shadow-xl animate-pulse" />
+          <img
+            src={icon4}
+            alt="icon4"
+            className="absolute bottom-5 right-6 w-20 bg-gray-200 rounded-full shadow-xl float"
+          />
 
         </div>
       </div>
@@ -85,21 +103,21 @@ function Home() {
 
           <div className="grid md:grid-cols-3 gap-10">
 
-            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300">
+            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:shadow-purple-200 transition duration-300">
               <h3 className="text-xl font-semibold mb-3">AI-Based Assessment</h3>
               <p className="text-gray-600">
                 Get personalized career recommendations based on your interests and strengths.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300">
+            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:shadow-purple-200 transition duration-300">
               <h3 className="text-xl font-semibold mb-3">College Suggestions</h3>
               <p className="text-gray-600">
                 Discover top colleges aligned with your selected career path.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300">
+            <div className="p-8 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:shadow-purple-200 transition duration-300">
               <h3 className="text-xl font-semibold mb-3">Growth Roadmap</h3>
               <p className="text-gray-600">
                 View a step-by-step roadmap to achieve your career goals confidently.
@@ -110,6 +128,7 @@ function Home() {
         </div>
       </section>
 
+      <CareerSection />
       <HowItWorks />
       <Footer />
 

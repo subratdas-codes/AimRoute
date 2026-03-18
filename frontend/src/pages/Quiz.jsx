@@ -156,33 +156,51 @@ function Quiz() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl text-center">
+ return (
+  <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4">
 
-        <p className="text-sm text-gray-500 mb-4">
-          Question {current + 1} of {questions.length}
-        </p>
+    <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-2xl">
 
-        <h2 className="text-2xl font-bold mb-8">
-          {questions[current].question}
-        </h2>
+      {/* PROGRESS BAR */}
+      <div className="mb-6">
 
-        <div className="space-y-4">
-          {questions[current].options.map((opt, index) => (
-            <button
-              key={index}
-              onClick={() => handleAnswer(opt.category)}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition"
-            >
-              {opt.text}
-            </button>
-          ))}
+        <div className="flex justify-between text-sm text-gray-500 mb-2">
+          <span>Question {current + 1}</span>
+          <span>{questions.length} Total</span>
+        </div>
+
+        <div className="w-full bg-gray-200 h-2 rounded-full">
+          <div
+            className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+            style={{
+              width: `${((current + 1) / questions.length) * 100}%`
+            }}
+          ></div>
         </div>
 
       </div>
+
+      {/* QUESTION */}
+      <h2 className="text-2xl font-bold mb-8 text-center">
+        {questions[current].question}
+      </h2>
+
+      {/* OPTIONS */}
+      <div className="space-y-4">
+        {questions[current].options.map((opt, index) => (
+          <button
+            key={index}
+            onClick={() => handleAnswer(opt.category)}
+            className="w-full text-left px-6 py-4 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-400 transition duration-200"
+          >
+            {opt.text}
+          </button>
+        ))}
+      </div>
+
     </div>
-  );
+  </div>
+);
 }
 
 export default Quiz;

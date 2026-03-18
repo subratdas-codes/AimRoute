@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Quiz from "./pages/Quiz";
 import Result from "./pages/Result";
+import Services from "./pages/Services";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/quiz" element={<Quiz />} />
          <Route path="/result" element={<Result />} />
+         <Route path="/services" element={<Services />} />
       </Routes>
 
     </div>
