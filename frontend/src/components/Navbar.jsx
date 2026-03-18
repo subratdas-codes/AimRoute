@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.PNG";
@@ -120,6 +121,30 @@ function Navbar() {
         </div>
 
       </nav>
+=======
+
+function Navbar() {
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  return (
+    <div style={{ padding: "15px", background: "#eee" }}>
+      <Link to="/">Home</Link> |{" "}
+      {!token && <Link to="/login">Login</Link>} |{" "}
+      {!token && <Link to="/signup">Signup</Link>} |{" "}
+      {token && <Link to="/dashboard">Dashboard</Link>} |{" "}
+      {token && (
+        <button onClick={handleLogout}>
+          Logout
+        </button>
+      )}
+>>>>>>> develop
     </div>
   );
 }
