@@ -51,9 +51,7 @@ function Navbar() {
             Home
           </Link>
 
-          <Link to="/quiz" className="hover:text-pink-200 transition">
-            Career Test
-          </Link>
+          <Link to="/career-path">Explore Path 🚀</Link>
 
           <Link to="/services" className="hover:text-pink-200 transition">
             Services
