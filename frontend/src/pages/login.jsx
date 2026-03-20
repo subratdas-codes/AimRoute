@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { loginUser } from "../services/authService";
 import bgImage from "../assets/login-bg.jpg";
 
 function Login() {
@@ -21,7 +22,7 @@ function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -29,9 +30,26 @@ function Login() {
       return;
     }
 
-    login({ name: formData.email });
+    try {
+      const response = await loginUser({
+        email: formData.email,
+        password: formData.password
+      });
 
-    navigate("/");   // ✅ Redirect to Home page
+      console.log("Login Success:", response.data);
+
+      // Save token if backend returns access_token
+      if (response.data.access_token) {
+        localStorage.setItem("token", response.data.access_token);
+      }
+
+      login({ name: formData.email });
+
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || "Invalid email or password");
+    }
   };
 
   return (
@@ -44,9 +62,10 @@ function Login() {
 
       {/* Login Card Section */}
       <div className="relative z-10 flex items-center justify-center min-h-[70vh] px-4">
-        <div className="bg-white/20 backdrop-blur-xl border border-white/30 
-                        p-10 rounded-3xl shadow-2xl w-full max-w-md">
-
+        <div
+          className="bg-white/20 backdrop-blur-xl border border-white/30 
+                     p-10 rounded-3xl shadow-2xl w-full max-w-md"
+        >
           <h2 className="text-3xl font-bold text-white text-center mb-8">
             Welcome Back
           </h2>
@@ -98,11 +117,13 @@ function Login() {
 
           <p className="text-sm text-center mt-6 text-white">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-pink-300 font-medium hover:underline">
+            <Link
+              to="/signup"
+              className="text-pink-300 font-medium hover:underline"
+            >
               Create one
             </Link>
           </p>
-
         </div>
       </div>
     </div>

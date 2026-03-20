@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../services/authService";
 import bgImage from "../assets/login-bg.jpg";
 
 function Signup() {
@@ -13,6 +14,7 @@ function Signup() {
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -21,22 +23,47 @@ function Signup() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
       setError("All fields are required.");
+      setSuccess("");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
+      setSuccess("");
       return;
     }
 
-    // Later: Save to backend or localStorage
+    try {
+      const response = await registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
 
-    navigate("/login");  // ✅ Redirect to Login page
+      console.log("Registration Success:", response.data);
+
+      setError("");
+      setSuccess("Registration successful! Redirecting to login...");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+
+    } catch (err) {
+      console.error(err);
+      setSuccess("");
+      setError(err.response?.data?.detail || "Registration failed");
+    }
   };
 
   return (
@@ -49,9 +76,10 @@ function Signup() {
 
       {/* Signup Card */}
       <div className="relative z-10 flex items-center justify-center min-h-[80vh] px-4">
-        <div className="bg-white/20 backdrop-blur-xl border border-white/30 
-                        p-10 rounded-3xl shadow-2xl w-full max-w-md">
-
+        <div
+          className="bg-white/20 backdrop-blur-xl border border-white/30 
+                     p-10 rounded-3xl shadow-2xl w-full max-w-md"
+        >
           <h2 className="text-3xl font-bold text-white text-center mb-8">
             Create Account
           </h2>
@@ -62,8 +90,13 @@ function Signup() {
             </p>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          {success && (
+            <p className="text-green-300 text-sm mb-4 text-center">
+              {success}
+            </p>
+          )}
 
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm text-white mb-1">
                 Full Name
@@ -128,16 +161,17 @@ function Signup() {
             >
               Sign Up
             </button>
-
           </form>
 
           <p className="text-sm text-center mt-6 text-white">
             Already have an account?{" "}
-            <Link to="/login" className="text-pink-300 font-medium hover:underline">
+            <Link
+              to="/login"
+              className="text-pink-300 font-medium hover:underline"
+            >
               Login
             </Link>
           </p>
-
         </div>
       </div>
     </div>
