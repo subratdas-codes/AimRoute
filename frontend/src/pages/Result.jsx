@@ -6,7 +6,7 @@ import {
   CategoryScale,
   LinearScale,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 
 ChartJS.register(
@@ -17,166 +17,225 @@ ChartJS.register(
   Legend
 );
 
-// 🔥 Career Mapping Logic
-const careerDetails = {
-  Technology: {
-    stream: "Science (PCM)",
-    careers: ["Software Engineer", "Data Scientist", "AI Engineer", "Cyber Security Expert"],
-    exams: ["JEE", "BITSAT", "VITEEE"],
-    reason: "You show strong analytical and logical thinking skills."
-  },
-  Healthcare: {
-    stream: "Science (PCB)",
-    careers: ["Doctor", "Nurse", "Physiotherapist", "Pharmacist"],
-    exams: ["NEET"],
-    reason: "You have empathy and enjoy helping others."
-  },
-  Business: {
-    stream: "Commerce",
-    careers: ["CA", "MBA", "Entrepreneur", "Financial Analyst"],
-    exams: ["CUET", "CAT", "CA Foundation"],
-    reason: "You have leadership qualities and financial interest."
-  },
-  Creative: {
-    stream: "Arts / Any Stream",
-    careers: ["Graphic Designer", "Animator", "Content Creator", "Fashion Designer"],
-    exams: ["NID", "NIFT"],
-    reason: "You are imaginative and enjoy creative expression."
-  }
-};
-
 function Result() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const scores = location.state?.scores || {};
-  const educationLevel = scores.educationLevel;
+  const { career, reasons, level, scores } = location.state || {};
 
-  // 🔥 Remove educationLevel from scoring
-  const filteredScores = Object.fromEntries(
-    Object.entries(scores).filter(([key]) => key !== "educationLevel")
-  );
+  if (!career) {
+    return <div className="p-10 text-center">No Result Found</div>;
+  }
 
-  const sorted = Object.entries(filteredScores).sort((a, b) => b[1] - a[1]);
-  const topCareer = sorted.length > 0 ? sorted[0][0] : null;
+  // 🔥 Career Data
+  const careerData = {
+    Technology: {
+      title: "Technology Field 💻",
+      description:
+        "You are inclined towards logical thinking and problem-solving, making technology a great fit for you.",
 
-  const details = careerDetails[topCareer];
+      nextSteps: {
+        "10th": "Choose Science stream (PCM) in +2.",
+        "12th": "Pursue BTech, BCA or similar degree.",
+        "grad": "Apply for tech jobs or go for MCA/MBA.",
+        "pg": "Advance in specialized tech roles or leadership.",
+      },
 
-  const data = {
-    labels: Object.keys(filteredScores),
-    datasets: [
-      {
-        label: "Your Score",
-        data: Object.values(filteredScores),
-        backgroundColor: "#7C3AED"
-      }
-    ]
+      roadmap: "10th → 12th Science → BTech → Software Engineer",
+
+      skills: ["Programming", "Logical Thinking", "Problem Solving"],
+
+      careers: [
+        "Software Engineer",
+        "Data Scientist",
+        "AI Engineer",
+        "Cyber Security Expert",
+      ],
+
+      salary: "₹5 LPA – ₹25 LPA",
+    },
+
+    Business: {
+      title: "Business & Management 💼",
+      description:
+        "You have leadership qualities and interest in management and finance.",
+
+      nextSteps: {
+        "10th": "Choose Commerce stream in +2.",
+        "12th": "Pursue BBA, BCom or related fields.",
+        "grad": "Go for MBA or start business.",
+        "pg": "Advance into leadership roles or entrepreneurship.",
+      },
+
+      roadmap: "10th → Commerce → BBA → MBA → Manager",
+
+      skills: ["Communication", "Leadership", "Financial Knowledge"],
+
+      careers: [
+        "Entrepreneur",
+        "Business Analyst",
+        "Manager",
+        "Financial Analyst",
+      ],
+
+      salary: "₹4 LPA – ₹20 LPA",
+    },
+
+    Healthcare: {
+      title: "Healthcare Field 🏥",
+      description:
+        "You are empathetic and interested in helping people, making healthcare ideal for you.",
+
+      nextSteps: {
+        "10th": "Choose Science stream (PCB).",
+        "12th": "Prepare for NEET and pursue MBBS.",
+        "grad": "Specialize in medical field.",
+        "pg": "Become expert doctor or researcher.",
+      },
+
+      roadmap: "10th → 12th PCB → MBBS → Doctor",
+
+      skills: ["Empathy", "Biology Knowledge", "Patience"],
+
+      careers: ["Doctor", "Nurse", "Physiotherapist"],
+
+      salary: "₹6 LPA – ₹30 LPA",
+    },
+
+    Creative: {
+      title: "Creative Field 🎨",
+      description:
+        "You have imagination and artistic thinking, perfect for creative careers.",
+
+      nextSteps: {
+        "10th": "Choose Arts or any flexible stream.",
+        "12th": "Pursue Design / Media courses.",
+        "grad": "Build portfolio and skills.",
+        "pg": "Specialize in creative domain.",
+      },
+
+      roadmap: "10th → Arts → Design Course → Creative Career",
+
+      skills: ["Creativity", "Design Thinking", "Communication"],
+
+      careers: [
+        "Graphic Designer",
+        "Animator",
+        "Content Creator",
+      ],
+
+      salary: "₹3 LPA – ₹15 LPA",
+    },
   };
 
- return (
-  <div className="min-h-screen bg-purple-50 flex items-center justify-center px-6 py-20">
-    <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-5xl">
+  const data = careerData[career];
 
-      <h2 className="text-3xl font-bold text-center mb-8">
-        Your Career Recommendation
-      </h2>
+  // 🔥 Graph Data
+  const chartData = {
+    labels: Object.keys(scores || {}),
+    datasets: [
+      {
+        label: "Your Career Fit Score",
+        data: Object.values(scores || {}),
+        backgroundColor: "#7C3AED",
+      },
+    ],
+  };
 
-      {topCareer ? (
-        <>
+  return (
+    <div className="min-h-screen bg-purple-50 flex items-center justify-center px-6 py-20">
 
-          {/* TOP RESULT CARD */}
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center mb-10">
+      <div className="bg-white p-10 rounded-3xl shadow-xl max-w-5xl w-full mx-auto">
 
-            <p className="text-sm text-gray-500 mb-2">
-              🎯 Best Career Match
-            </p>
+        {/* Title */}
+        <h2 className="text-3xl font-bold text-center mb-6">
+          🎯 Your Career Direction
+        </h2>
 
-            <p className="text-3xl font-bold text-purple-600">
-              {topCareer}
-            </p>
+        <h3 className="text-2xl text-purple-600 font-semibold text-center mb-4">
+          {data.title}
+        </h3>
 
-            {educationLevel === "After10th" && (
-              <p className="text-gray-600 mt-2">
-                Since you completed 10th, this stream fits your interests.
-              </p>
-            )}
-
-            {educationLevel && educationLevel !== "After10th" && (
-              <p className="text-gray-600 mt-2">
-                Based on your 12th background, this career path suits you.
-              </p>
-            )}
-
-          </div>
-
-
-          <div className="grid md:grid-cols-2 gap-10 mb-10">
-
-            {/* LEFT SIDE DETAILS */}
-            <div>
-
-              <h3 className="font-semibold mb-2">
-                {educationLevel === "After10th"
-                  ? "Recommended Stream:"
-                  : "Suggested Degree / Field:"}
-              </h3>
-
-              <p className="text-gray-700 mb-4">
-                {details?.stream}
-              </p>
-
-
-              <h3 className="font-semibold mb-2">Top Career Options</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                {details?.careers.map((career, i) => (
-                  <li key={i}>{career}</li>
-                ))}
-              </ul>
-
-
-              <h3 className="font-semibold mt-6 mb-2">Entrance Exams</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                {details?.exams.map((exam, i) => (
-                  <li key={i}>{exam}</li>
-                ))}
-              </ul>
-
-
-              <h3 className="font-semibold mt-6 mb-2">Why This Suits You</h3>
-              <p className="text-gray-700">
-                {details?.reason}
-              </p>
-
-            </div>
-
-
-            {/* RIGHT SIDE CHART */}
-            <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-              <Bar data={data} />
-            </div>
-
-          </div>
-
-        </>
-      ) : (
-        <p className="text-center text-gray-600">
-          Please complete the quiz first.
+        <p className="text-center text-gray-600 mb-8">
+          {data.description}
         </p>
-      )}
 
-      {/* ACTION BUTTON */}
-      <div className="text-center">
-        <button
-          onClick={() => navigate("/quiz")}
-          className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
-        >
-          Retake Quiz
-        </button>
+        {/* 🔥 GRAPH */}
+        <div className="mb-10">
+          <h4 className="font-semibold mb-3 text-center">
+            📊 Your Profile Analysis
+          </h4>
+          <Bar data={chartData} />
+        </div>
+
+        {/* Next Step */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-2">📍 What you should do next:</h4>
+          <p className="text-gray-700">
+            {data.nextSteps[level]}
+          </p>
+        </div>
+
+        {/* Roadmap */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-2">🛤 Career Roadmap:</h4>
+          <p className="text-gray-700">{data.roadmap}</p>
+        </div>
+
+        {/* Skills */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-2">🛠 Skills Required:</h4>
+          <ul className="list-disc list-inside text-gray-700">
+            {data.skills.map((skill, i) => (
+              <li key={i}>{skill}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Careers */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-2">💼 Career Options:</h4>
+          <ul className="list-disc list-inside text-gray-700">
+            {data.careers.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Salary */}
+        <div className="mb-6">
+          <h4 className="font-semibold mb-2">💰 Salary Range:</h4>
+          <p className="text-gray-700">{data.salary}</p>
+        </div>
+
+        {/* Reasons */}
+        <div>
+          <h4 className="font-semibold mb-2">📊 Why this suits you:</h4>
+          <ul className="list-disc list-inside text-gray-700">
+            {reasons?.map((r, i) => (
+              <li key={i}>✔ {r}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* 🔥 RETAKE BUTTON */}
+        <div className="mt-12 flex justify-center">
+          <button
+            onClick={() => {
+              window.scrollTo(0, 0);
+              navigate("/career-path");
+            }}
+            className="bg-gradient-to-r from-purple-600 to-pink-500 
+                       text-white px-8 py-3 rounded-xl font-semibold 
+                       shadow-lg hover:scale-105 transition duration-300"
+          >
+            🔄 Retake Assessment
+          </button>
+        </div>
+
       </div>
-
     </div>
-  </div>
-);
+  );
 }
 
 export default Result;
