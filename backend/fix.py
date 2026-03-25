@@ -1,0 +1,3 @@
+with open(r'C:\Users\KIIT\Desktop\AimRoute\backend\app\utils\hash.py', 'w') as f:
+    f.write('from passlib.context import CryptContext\n\npwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")\n\ndef hash_password(password: str):\n    return pwd_context.hash(password[:72])\n\ndef verify_password(plain_password, hashed_password):\n    return pwd_context.verify(plain_password[:72], hashed_password)\n')
+print("Done!")

@@ -1,241 +1,203 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import React, { useEffect, useState } from "react";
+import API from "../services/api";
 
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend
-);
+const INDIAN_STATES = [
+  "All States", "Odisha", "Delhi", "Maharashtra", "West Bengal",
+  "Tamil Nadu", "Karnataka", "Gujarat", "Rajasthan", "Uttar Pradesh",
+  "Madhya Pradesh", "Bihar", "Andhra Pradesh", "Telangana", "Kerala",
+  "Punjab", "Haryana", "Jharkhand", "Assam", "Uttarakhand"
+];
 
-function Result() {
-  const navigate = useNavigate();
-  const location = useLocation();
+const Result = () => {
+  const [data, setData] = useState(null);
+  const [colleges, setColleges] = useState([]);
+  const [selectedState, setSelectedState] = useState("All States");
+  const [loadingColleges, setLoadingColleges] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const { career, reasons, level, scores } = location.state || {};
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("career_result"));
+    setData(stored);
+    if (stored) {
+      fetchColleges(stored.top_careers[0].career, "All States");
+    }
+  }, []);
 
-  if (!career) {
-    return <div className="p-10 text-center">No Result Found</div>;
-  }
-
-  // 🔥 Career Data
-  const careerData = {
-    Technology: {
-      title: "Technology Field 💻",
-      description:
-        "You are inclined towards logical thinking and problem-solving, making technology a great fit for you.",
-
-      nextSteps: {
-        "10th": "Choose Science stream (PCM) in +2.",
-        "12th": "Pursue BTech, BCA or similar degree.",
-        "grad": "Apply for tech jobs or go for MCA/MBA.",
-        "pg": "Advance in specialized tech roles or leadership.",
-      },
-
-      roadmap: "10th → 12th Science → BTech → Software Engineer",
-
-      skills: ["Programming", "Logical Thinking", "Problem Solving"],
-
-      careers: [
-        "Software Engineer",
-        "Data Scientist",
-        "AI Engineer",
-        "Cyber Security Expert",
-      ],
-
-      salary: "₹5 LPA – ₹25 LPA",
-    },
-
-    Business: {
-      title: "Business & Management 💼",
-      description:
-        "You have leadership qualities and interest in management and finance.",
-
-      nextSteps: {
-        "10th": "Choose Commerce stream in +2.",
-        "12th": "Pursue BBA, BCom or related fields.",
-        "grad": "Go for MBA or start business.",
-        "pg": "Advance into leadership roles or entrepreneurship.",
-      },
-
-      roadmap: "10th → Commerce → BBA → MBA → Manager",
-
-      skills: ["Communication", "Leadership", "Financial Knowledge"],
-
-      careers: [
-        "Entrepreneur",
-        "Business Analyst",
-        "Manager",
-        "Financial Analyst",
-      ],
-
-      salary: "₹4 LPA – ₹20 LPA",
-    },
-
-    Healthcare: {
-      title: "Healthcare Field 🏥",
-      description:
-        "You are empathetic and interested in helping people, making healthcare ideal for you.",
-
-      nextSteps: {
-        "10th": "Choose Science stream (PCB).",
-        "12th": "Prepare for NEET and pursue MBBS.",
-        "grad": "Specialize in medical field.",
-        "pg": "Become expert doctor or researcher.",
-      },
-
-      roadmap: "10th → 12th PCB → MBBS → Doctor",
-
-      skills: ["Empathy", "Biology Knowledge", "Patience"],
-
-      careers: ["Doctor", "Nurse", "Physiotherapist"],
-
-      salary: "₹6 LPA – ₹30 LPA",
-    },
-
-    Creative: {
-      title: "Creative Field 🎨",
-      description:
-        "You have imagination and artistic thinking, perfect for creative careers.",
-
-      nextSteps: {
-        "10th": "Choose Arts or any flexible stream.",
-        "12th": "Pursue Design / Media courses.",
-        "grad": "Build portfolio and skills.",
-        "pg": "Specialize in creative domain.",
-      },
-
-      roadmap: "10th → Arts → Design Course → Creative Career",
-
-      skills: ["Creativity", "Design Thinking", "Communication"],
-
-      careers: [
-        "Graphic Designer",
-        "Animator",
-        "Content Creator",
-      ],
-
-      salary: "₹3 LPA – ₹15 LPA",
-    },
+  const fetchColleges = async (career, state) => {
+    setLoadingColleges(true);
+    try {
+      const response = await API.get("/colleges/", {
+        params: {
+          career: career,
+          state: state === "All States" ? null : state,
+        },
+      });
+      setColleges(response.data);
+    } catch (err) {
+      console.error("Failed to fetch colleges", err);
+    } finally {
+      setLoadingColleges(false);
+    }
   };
 
-  const data = careerData[career];
-
-  // 🔥 Graph Data
-  const chartData = {
-    labels: Object.keys(scores || {}),
-    datasets: [
-      {
-        label: "Your Career Fit Score",
-        data: Object.values(scores || {}),
-        backgroundColor: "#7C3AED",
-      },
-    ],
+  const handleStateChange = (e) => {
+    const state = e.target.value;
+    setSelectedState(state);
+    fetchColleges(data.top_careers[0].career, state);
   };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await API.post("/results/save", {
+        career: data.top_careers[0].career,
+        confidence: data.top_careers[0].confidence,
+        reasons: data.reasons,
+        level: data.level,
+        colleges: colleges.slice(0, 3).map(c => c.name),
+      });
+      setSaved(true);
+    } catch (err) {
+      console.error("Save failed", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!data) return <p className="text-center mt-10">Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-purple-50 flex items-center justify-center px-6 py-20">
+    <div className="p-6 max-w-5xl mx-auto">
 
-      <div className="bg-white p-10 rounded-3xl shadow-xl max-w-5xl w-full mx-auto">
+      {/* Hero */}
+      <h1 className="text-3xl font-bold text-center mb-2">
+        ✨ You're Built for {data.top_careers[0].career}
+      </h1>
+      <p className="text-center text-gray-500 mb-6">
+        Based on your choices and strengths
+      </p>
 
-        {/* Title */}
-        <h2 className="text-3xl font-bold text-center mb-6">
-          🎯 Your Career Direction
-        </h2>
-
-        <h3 className="text-2xl text-purple-600 font-semibold text-center mb-4">
-          {data.title}
-        </h3>
-
-        <p className="text-center text-gray-600 mb-8">
-          {data.description}
-        </p>
-
-        {/* 🔥 GRAPH */}
-        <div className="mb-10">
-          <h4 className="font-semibold mb-3 text-center">
-            📊 Your Profile Analysis
-          </h4>
-          <Bar data={chartData} />
-        </div>
-
-        {/* Next Step */}
-        <div className="mb-6">
-          <h4 className="font-semibold mb-2">📍 What you should do next:</h4>
-          <p className="text-gray-700">
-            {data.nextSteps[level]}
-          </p>
-        </div>
-
-        {/* Roadmap */}
-        <div className="mb-6">
-          <h4 className="font-semibold mb-2">🛤 Career Roadmap:</h4>
-          <p className="text-gray-700">{data.roadmap}</p>
-        </div>
-
-        {/* Skills */}
-        <div className="mb-6">
-          <h4 className="font-semibold mb-2">🛠 Skills Required:</h4>
-          <ul className="list-disc list-inside text-gray-700">
-            {data.skills.map((skill, i) => (
-              <li key={i}>{skill}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Careers */}
-        <div className="mb-6">
-          <h4 className="font-semibold mb-2">💼 Career Options:</h4>
-          <ul className="list-disc list-inside text-gray-700">
-            {data.careers.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Salary */}
-        <div className="mb-6">
-          <h4 className="font-semibold mb-2">💰 Salary Range:</h4>
-          <p className="text-gray-700">{data.salary}</p>
-        </div>
-
-        {/* Reasons */}
-        <div>
-          <h4 className="font-semibold mb-2">📊 Why this suits you:</h4>
-          <ul className="list-disc list-inside text-gray-700">
-            {reasons?.map((r, i) => (
-              <li key={i}>✔ {r}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* 🔥 RETAKE BUTTON */}
-        <div className="mt-12 flex justify-center">
-          <button
-            onClick={() => {
-              window.scrollTo(0, 0);
-              navigate("/career-path");
-            }}
-            className="bg-gradient-to-r from-purple-600 to-pink-500 
-                       text-white px-8 py-3 rounded-xl font-semibold 
-                       shadow-lg hover:scale-105 transition duration-300"
-          >
-            🔄 Retake Assessment
-          </button>
-        </div>
-
+      {/* Roadmap */}
+      <div className="flex flex-wrap justify-center gap-3 mb-8">
+        {["10th", "12th", "Degree", data.top_careers[0].career].map((step, i) => (
+          <span key={i} className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full">
+            {step}
+          </span>
+        ))}
       </div>
+
+      {/* Career Cards */}
+      <h2 className="text-xl font-semibold mb-4">Top Career Matches</h2>
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
+        {data.top_careers.map((c, i) => (
+          <div key={i} className={`p-4 shadow rounded-xl border ${
+            i === 0 ? "border-purple-400 bg-purple-50" : "border-gray-200"
+          }`}>
+            {i === 0 && (
+              <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full mb-2 inline-block">
+                Best Match
+              </span>
+            )}
+            <h3 className="font-bold">{c.career}</h3>
+            <p className="text-sm text-gray-500">{c.confidence}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Salary */}
+      <h2 className="text-xl font-semibold mb-2">Salary Potential</h2>
+      <div className="bg-gray-200 h-4 rounded-full mb-2">
+        <div className="bg-green-500 h-4 rounded-full w-2/3"></div>
+      </div>
+      <p className="text-sm text-gray-600 mb-6">₹5L – ₹25L per year (approx)</p>
+
+      {/* Why This Fits */}
+      <h2 className="text-xl font-semibold mb-4">Why This Fits You</h2>
+      <div className="flex flex-wrap gap-2 mb-8">
+        {data.reasons.slice(0, 5).map((r, i) => (
+          <span key={i} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+            {r}
+          </span>
+        ))}
+      </div>
+
+      {/* College Location Filter */}
+      <h2 className="text-xl font-semibold mb-4">Suggested Colleges</h2>
+      <div className="flex flex-wrap gap-4 mb-6 items-center">
+        <div>
+          <label className="text-sm text-gray-600 mr-2">Filter by State:</label>
+          <select
+            value={selectedState}
+            onChange={handleStateChange}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          >
+            {INDIAN_STATES.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
+          </select>
+        </div>
+        {selectedState !== "All States" && (
+          <span className="text-sm text-purple-600 font-medium">
+            Showing colleges in {selectedState}
+          </span>
+        )}
+      </div>
+
+      {/* College List */}
+      {loadingColleges ? (
+        <p className="text-center text-gray-400 mb-8">Loading colleges...</p>
+      ) : colleges.length === 0 ? (
+        <p className="text-center text-gray-400 mb-8">
+          No colleges found for this state. Try "All States".
+        </p>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          {colleges.map((col, i) => (
+            <div key={i} className="p-4 border rounded-xl hover:shadow-md transition">
+              <h3 className="font-bold text-gray-800">{col.name}</h3>
+              <p className="text-sm text-gray-500">{col.city}, {col.state}</p>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                  {col.college_type}
+                </span>
+                <span className="text-blue-600 font-semibold text-sm">
+                  Cutoff: {col.cutoff_percentage}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Save Button */}
+      {saved ? (
+        <div className="w-full py-3 bg-green-100 text-green-700 rounded-xl font-semibold text-center mb-4">
+          Result saved to your dashboard!
+        </div>
+      ) : (
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition mb-4"
+        >
+          {saving ? "Saving..." : "Save My Result to Dashboard"}
+        </button>
+      )}
+
+      {/* Try Again */}
+      <button
+        onClick={() => {
+          localStorage.removeItem("career_result");
+          window.location.href = "/career-path";
+        }}
+        className="w-full py-3 border border-purple-600 text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition"
+      >
+        Try Again
+      </button>
+
     </div>
   );
-}
+};
 
 export default Result;

@@ -51,11 +51,13 @@ function Navbar() {
             Home
           </Link>
 
-          <Link to="/career-path">Explore Path 🚀</Link>
-
           <Link to="/services" className="hover:text-pink-200 transition">
             Services
           </Link>
+
+          <Link to="/career-path" className="hover:text-pink-200 transition">Explore Path 🚀</Link>
+
+          
 
           {/* Guest User */}
           {!user && (
@@ -85,15 +87,10 @@ function Navbar() {
                     onClick={() => navigate("/profile")}
                     className="block w-full text-left px-4 py-2 hover:bg-purple-50"
                   >
-                    Profile
+                    Dashboard
                   </button>
 
-                  <button
-                    onClick={() => navigate("/history")}
-                    className="block w-full text-left px-4 py-2 hover:bg-purple-50"
-                  >
-                    Decision History
-                  </button>
+                  
 
                   <button
                     onClick={() => navigate("/settings")}

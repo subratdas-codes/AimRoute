@@ -7,7 +7,6 @@ from app.utils.hash import hash_password
 
 router = APIRouter()
 
-# DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -17,7 +16,9 @@ def get_db():
 
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    hashed_pwd = hash_password(user.password)
+    # Truncate password to 72 chars before hashing
+    safe_password = user.password[:72]
+    hashed_pwd = hash_password(safe_password)
 
     new_user = User(
         name=user.name,
