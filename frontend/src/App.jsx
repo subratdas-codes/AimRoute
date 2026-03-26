@@ -11,6 +11,7 @@ import Result from "./pages/Result";
 import CareerPath from "./pages/CareerPath";
 import CareerQuestions from "./pages/CareerQuestions";
 import Services from "./pages/Services";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -26,7 +27,8 @@ function App() {
         <Route path="/result" element={<Result />} />
         <Route path="/career-path" element={<CareerPath />} />
         <Route path="/career-path/:level" element={<CareerQuestions />} />
-        <Route path="/Services" element={<Services />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </>
   );
