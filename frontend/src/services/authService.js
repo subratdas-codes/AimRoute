@@ -7,5 +7,5 @@ export const loginUser = async (data) => {
 
 // Register API
 export const registerUser = async (data) => {
-  return await API.post("/register", data);
+  return await API.post("/auth/register", data);  // fix: added /auth/
 };

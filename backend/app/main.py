@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.connection import engine
 from app.database.base import Base
 
-from app.models import user_model, question_model, result_model
+from app.models import user_model, question_model, result_model, college_model
+from app.models.question_model import Question, QuestionOption
 from app.models import college_model
 
 from app.routes import auth_routes
