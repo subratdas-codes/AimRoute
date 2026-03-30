@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal
-from app.models.question_model import Question
+from app.models.question_model import Question, QuestionOption
 from app.models.result_model import Result
 from app.schemas.quiz_schema import QuizSubmit
 from app.utils.dependencies import get_current_user
@@ -9,7 +9,7 @@ import numpy as np
 import pickle
 from pathlib import Path
 
-router = APIRouter(prefix="/quiz", tags=["Quiz"])
+router = APIRouter()
 
 # Load ML model once
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -24,26 +24,44 @@ def get_db():
     finally:
         db.close()
 
+# ── GET QUESTIONS (no auth required) ─────────────────────
 @router.get("/")
-def get_questions(db: Session = Depends(get_db)):
-    questions = db.query(Question).all()
-    return questions
+def get_questions(level: str, db: Session = Depends(get_db)):
+    questions = db.query(Question).filter(
+        Question.level == level
+    ).order_by(Question.order_index).all()
 
+    result = []
+    for q in questions:
+        result.append({
+            "id": q.id,
+            "question_text": q.question_text,
+            "is_start": q.is_start,
+            "options": [
+                {
+                    "id": opt.id,
+                    "option_text": opt.option_text,
+                    "category_tag": opt.category_tag,
+                    "next_question_id": opt.next_question_id
+                }
+                for opt in q.options
+            ]
+        })
+    return result
+
+
+# ── SUBMIT QUIZ (auth required to save result) ───────────
 @router.post("/submit")
 def submit_quiz(
     quiz: QuizSubmit,
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Convert answers to skill scores
-    # Each answer maps to a skill — you define this mapping
     skill_scores = {
         "Python": 0, "SQL": 0, "HTML": 0, "CSS": 0,
         "Java": 0, "Communication": 0, "Logic": 0, "Math": 0
     }
 
-    # Map each question answer to a skill score
-    # Adjust this mapping based on your actual questions
     answer_to_skill = {
         "q1": {"A": "Math", "B": "Communication"},
         "q2": {"A": "Python", "B": "HTML"},
@@ -61,7 +79,6 @@ def submit_quiz(
             if skill:
                 skill_scores[skill] += 1
 
-    # Send to ML model
     input_data = np.array([[
         skill_scores["Python"],
         skill_scores["SQL"],
@@ -84,7 +101,6 @@ def submit_quiz(
             "confidence": f"{round(probabilities[i]*100, 2)}%"
         })
 
-    # Save top career to database
     new_result = Result(
         user_email=current_user,
         score=int(sum(skill_scores.values())),
