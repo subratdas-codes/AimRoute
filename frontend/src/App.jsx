@@ -1,34 +1,50 @@
-import { Routes, Route } from "react-router-dom";
+// frontend/src/App.jsx
 
-import Navbar from "./components/Navbar";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
-import Home from "./pages/Home/Home";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import Quiz from "./pages/Quiz";
-import Result from "./pages/Result";
-import CareerPath from "./pages/CareerPath";
+import Navbar          from "./components/Navbar";
+import Home            from "./pages/Home/Home";
+import Login           from "./pages/login";
+import Signup          from "./pages/signup";
+import Dashboard       from "./pages/Dashboard";
+import Quiz            from "./pages/Quiz";
+import Result          from "./pages/Result";
+import CareerPath      from "./pages/CareerPath";
 import CareerQuestions from "./pages/CareerQuestions";
-import Services from "./pages/Services";
-import ResetPassword from "./pages/ResetPassword";
+import Services        from "./pages/Services";
+import ResetPassword   from "./pages/ResetPassword";
+import Settings        from "./pages/Settings";
+
+// ── Route guard — redirects guests to /login ─────────────────
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" state={{ from: "protected" }} replace />;
+  return children;
+}
 
 function App() {
   return (
     <>
       <Navbar />
-
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/quiz" element={<Quiz />} />
-        <Route path="/result" element={<Result />} />
-        <Route path="/career-path" element={<CareerPath />} />
+        {/* Public — guests can access */}
+        <Route path="/"                   element={<Home />} />
+        <Route path="/login"              element={<Login />} />
+        <Route path="/signup"             element={<Signup />} />
+        <Route path="/services"           element={<Services />} />
+        <Route path="/career-path"        element={<CareerPath />} />
         <Route path="/career-path/:level" element={<CareerQuestions />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/result"             element={<Result />} />
+        <Route path="/quiz"               element={<Quiz />} />
+        <Route path="/reset-password"     element={<ResetPassword />} />
+
+        {/* Protected — login required */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/settings"  element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

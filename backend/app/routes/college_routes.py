@@ -1,37 +1,23 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
-from app.database.connection import SessionLocal
-from app.models.college_model import College
+from fastapi import APIRouter, Query
+from app.utils.college_engine import suggest_colleges
 
-router = APIRouter(prefix="/colleges", tags=["Colleges"])
+router = APIRouter(prefix="/colleges", tags=["colleges"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@router.get("/")
-def get_colleges(
-    career: str = Query(...),
-    state: str = Query(None),
-    db: Session = Depends(get_db)
+@router.get("/suggest")
+def get_college_suggestions(
+    state: str = Query(...),
+    percentage: float = Query(...),
+    dominant_category: str = Query(...),
+    level: str = Query(...)
 ):
-    query = db.query(College).filter(College.career_tag == career)
-
-    if state and state != "All States":
-        query = query.filter(College.state == state)
-
-    colleges = query.order_by(College.cutoff_percentage.desc()).all()
-
-    return [
-        {
-            "name": c.name,
-            "city": c.city,
-            "state": c.state,
-            "college_type": c.college_type,
-            "cutoff_percentage": c.cutoff_percentage,
-        }
-        for c in colleges
-    ]
+    colleges = suggest_colleges(
+        state=state,
+        percentage=percentage,
+        dominant_category=dominant_category,
+        level=level
+    )
+    return {
+        "total": len(colleges),
+        "state": state,
+        "colleges": colleges
+    }
