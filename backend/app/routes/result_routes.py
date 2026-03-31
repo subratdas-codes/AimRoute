@@ -1,13 +1,19 @@
+# backend/app/routes/result_routes.py
+
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from app.database.connection import SessionLocal
 from app.models.result_model import Result
+from app.models.user_model import User
 from app.utils.dependencies import get_current_user
+from app.utils.email_handler import send_result_email
 
 router = APIRouter(prefix="/results", tags=["Results"])
+
+DASHBOARD_URL = "http://localhost:5173/dashboard"
 
 
 def get_db():
@@ -29,13 +35,15 @@ class SaveResultRequest(BaseModel):
     all_careers: List[dict] = []
 
 
-# ── Save result ───────────────────────────────────────────────
+# ── Save result + send email ──────────────────────────────────
 @router.post("/save")
-def save_result(
+async def save_result(
     body: SaveResultRequest,
+    background_tasks: BackgroundTasks,
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Save to DB
     result = Result(
         user_email        = current_user,
         level             = body.level,
@@ -49,6 +57,21 @@ def save_result(
     db.add(result)
     db.commit()
     db.refresh(result)
+
+    # Get user's name from DB
+    user = db.query(User).filter(User.email == current_user).first()
+    user_name = user.name if user else "Student"
+
+    # Send congratulation email in background (non-blocking)
+    background_tasks.add_task(
+        send_result_email,
+        email         = current_user,
+        name          = user_name,
+        top_career    = body.top_career,
+        level         = body.level,
+        dashboard_url = DASHBOARD_URL,
+    )
+
     return {"message": "Result saved successfully", "id": result.id}
 
 
@@ -64,15 +87,15 @@ def get_my_results(
 
     return [
         {
-            "id":               r.id,
-            "level":            r.level,
-            "top_career":       r.top_career,
-            "fit_label":        r.fit_label,
-            "dominant_category":r.dominant_category,
-            "percentage":       r.percentage,
-            "reasons":          r.reasons.split(", ") if r.reasons else [],
-            "all_careers":      json.loads(r.all_careers) if r.all_careers else [],
-            "created_at":       r.created_at.isoformat(),
+            "id":                r.id,
+            "level":             r.level,
+            "top_career":        r.top_career,
+            "fit_label":         r.fit_label,
+            "dominant_category": r.dominant_category,
+            "percentage":        r.percentage,
+            "reasons":           r.reasons.split(", ") if r.reasons else [],
+            "all_careers":       json.loads(r.all_careers) if r.all_careers else [],
+            "created_at":        r.created_at.isoformat(),
         }
         for r in results
     ]

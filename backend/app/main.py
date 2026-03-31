@@ -1,6 +1,3 @@
-# backend/app/main.py
-# Replace your existing main.py with this
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,7 +15,6 @@ from app.routes import result_routes
 from app.routes import dashboard_routes
 from app.routes import college_routes
 
-# ✅ FIXED — import from utils not from app root
 from app.predict import router as ml_router
 
 app = FastAPI(
@@ -36,16 +32,14 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
-# ✅ result_routes and dashboard_routes already have prefix= inside them
-# DO NOT add prefix= here for those two — it would double up
-app.include_router(auth_routes.router,      prefix="/auth",      tags=["Auth"])
-app.include_router(login_routes.router,     prefix="/auth",      tags=["Login"])
-app.include_router(user_routes.router,      prefix="/users",     tags=["User"])
-app.include_router(quiz_routes.router,      prefix="/quiz",      tags=["Quiz"])
-app.include_router(result_routes.router,                         tags=["Results"])
-app.include_router(dashboard_routes.router,                      tags=["Dashboard"])
-app.include_router(college_routes.router,   prefix="/colleges",  tags=["Colleges"])
-app.include_router(ml_router,               prefix="/ml",        tags=["ML"])
+app.include_router(auth_routes.router,      prefix="/auth",  tags=["Auth"])
+app.include_router(login_routes.router,     prefix="/auth",  tags=["Login"])
+app.include_router(user_routes.router,      prefix="/users", tags=["User"])
+app.include_router(quiz_routes.router,      prefix="/quiz",  tags=["Quiz"])
+app.include_router(result_routes.router,                     tags=["Results"])
+app.include_router(dashboard_routes.router,                  tags=["Dashboard"])
+app.include_router(college_routes.router,                    tags=["Colleges"])
+app.include_router(ml_router,               prefix="/ml",    tags=["ML"])
 
 @app.get("/")
 def home():
