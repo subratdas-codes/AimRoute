@@ -298,6 +298,25 @@ const Result = () => {
               </p>
             </div>
           )}
+
+          {/* ── VIEW ROADMAP BUTTON ── */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-100">
+              <div>
+                <p className="font-bold text-gray-800 text-sm">📍 Want a step-by-step plan?</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  View the detailed career roadmap for <span className="text-purple-600 font-semibold">{data.top_careers[0]?.career}</span> and all your matches.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/roadmap")}
+                className="flex-shrink-0 flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 active:scale-95 transition-all shadow-md shadow-purple-200"
+              >
+                View Full Roadmap
+                <span className="text-base">→</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* WHY THIS FITS */}

@@ -32,7 +32,7 @@ function Home() {
           </p>
 
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/career-path")}
             className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
           >
             Start Career Assessment

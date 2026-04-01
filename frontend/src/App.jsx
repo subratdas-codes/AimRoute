@@ -9,7 +9,9 @@ import Login           from "./pages/login";
 import Signup          from "./pages/signup";
 import Dashboard       from "./pages/Dashboard";
 import Quiz            from "./pages/Quiz";
+import ChatBot         from "./components/ChatBot";
 import Result          from "./pages/Result";
+import Roadmap         from "./pages/Roadmap";
 import CareerPath      from "./pages/CareerPath";
 import CareerQuestions from "./pages/CareerQuestions";
 import Services        from "./pages/Services";
@@ -36,6 +38,7 @@ function App() {
         <Route path="/career-path"        element={<CareerPath />} />
         <Route path="/career-path/:level" element={<CareerQuestions />} />
         <Route path="/result"             element={<Result />} />
+        <Route path="/roadmap"            element={<Roadmap />} />
         <Route path="/quiz"               element={<Quiz />} />
         <Route path="/reset-password"     element={<ResetPassword />} />
 
@@ -46,7 +49,8 @@ function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+       <ChatBot />
+    </> 
   );
 }
 
