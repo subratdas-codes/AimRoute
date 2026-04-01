@@ -26,7 +26,27 @@ const ChatBot = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // ── Send message to BACKEND (not Anthropic directly) ──
+  const getHeaderSubtitle = () => {
+    if (!context) return "Career Guidance Assistant";
+
+    const category = context.dominant_category || "General";
+    const label = context.level_label || context.level?.toUpperCase() || "GENERAL";
+
+    return `Personalised for ${category} • ${label}`;
+  };
+
+  const getWelcomeMessage = () => {
+    if (!context) {
+      return "Hi! I'm AimRoute AI 👋\n\nTake the career quiz first for personalised advice, or ask me any career question!";
+    }
+
+    const label = context.level_label || context.level?.toUpperCase() || "student";
+    const percentage = context.percentage ? ` with ${context.percentage}% score` : "";
+    const category = context.dominant_category || "your field";
+
+    return `Hi! I'm your AimRoute AI counsellor 👋\n\nI can see you're a ${label} student${percentage} interested in ${category}.\n\nAsk me anything about your career path!`;
+  };
+
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim() || loading) return;
 
@@ -92,11 +112,7 @@ const ChatBot = () => {
             <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-lg">🤖</div>
             <div>
               <p className="text-white font-bold text-sm">AimRoute AI</p>
-              <p className="text-purple-200 text-xs">
-                {context
-                  ? `Personalised for ${context.dominant_category} • ${context.level?.toUpperCase()}`
-                  : "Career Guidance Assistant"}
-              </p>
+              <p className="text-purple-200 text-xs">{getHeaderSubtitle()}</p>
             </div>
             <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           </div>
@@ -104,21 +120,15 @@ const ChatBot = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
 
-            {/* Welcome message */}
             {messages.length === 0 && (
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <div className="w-7 h-7 bg-purple-100 rounded-full flex items-center justify-center text-sm flex-shrink-0">🤖</div>
                   <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm max-w-[85%]">
-                    <p className="text-sm text-gray-700">
-                      {context
-                        ? `Hi! I'm your AimRoute AI counsellor 👋\n\nI can see you're a ${context.level?.toUpperCase()} student with ${context.percentage}% score interested in ${context.dominant_category}.\n\nAsk me anything about your career path!`
-                        : "Hi! I'm AimRoute AI 👋\n\nTake the career quiz first for personalised advice, or ask me any career question!"}
-                    </p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{getWelcomeMessage()}</p>
                   </div>
                 </div>
 
-                {/* Suggested questions */}
                 <div className="space-y-2 pl-9">
                   <p className="text-xs text-gray-400 font-medium">Quick questions:</p>
                   {SUGGESTED_QUESTIONS.slice(0, 4).map((q, i) => (
@@ -132,7 +142,6 @@ const ChatBot = () => {
               </div>
             )}
 
-            {/* Chat messages */}
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0
@@ -148,7 +157,6 @@ const ChatBot = () => {
               </div>
             ))}
 
-            {/* Typing indicator */}
             {loading && (
               <div className="flex gap-2">
                 <div className="w-7 h-7 bg-purple-100 rounded-full flex items-center justify-center text-sm flex-shrink-0">🤖</div>
