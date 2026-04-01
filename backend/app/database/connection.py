@@ -1,7 +1,11 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "mysql+mysqlconnector://root:1234@localhost:3306/career_guidance"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+mysqlconnector://root:123@localhost:3306/career_guidance")
 
 engine = create_engine(DATABASE_URL, echo=True)
 
