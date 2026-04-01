@@ -3,6 +3,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
+import ScrollToTop from "./components/ScrollToTop";
 import Navbar          from "./components/Navbar";
 import Home            from "./pages/Home/Home";
 import Login           from "./pages/login";
@@ -28,6 +29,7 @@ function ProtectedRoute({ children }) {
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <Routes>
         {/* Public — guests can access */}

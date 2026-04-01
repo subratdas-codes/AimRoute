@@ -203,10 +203,10 @@ export default function Roadmap() {
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50">
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-violet-700 text-white">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-400 text-white">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <button onClick={() => navigate("/result")}
-            className="flex items-center gap-2 text-purple-200 hover:text-white text-sm mb-6 transition-colors">
+            className="flex items-center gap-2 text-purple-300 hover:text-white text-sm mb-6 transition-colors">
             ← Back to Results
           </button>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -223,7 +223,7 @@ export default function Roadmap() {
             </div>
             {selectedCareer && (
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/20 min-w-[220px]">
-                <p className="text-purple-200 text-xs font-medium uppercase tracking-wider mb-1">Viewing roadmap for</p>
+                <p className="text-purple-300 text-xs font-medium uppercase tracking-wider mb-1">Viewing roadmap for</p>
                 <p className="text-white font-bold text-xl leading-tight">{selectedCareer}</p>
                 <p className="text-purple-300 text-sm mt-1">{steps.length} phases · {result.dominant_category || "General"}</p>
               </div>
@@ -357,7 +357,7 @@ export default function Roadmap() {
             </div>
 
             {/* ── CTA ───────────────────────────────────────── */}
-            <div className="mt-10 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-8 text-white text-center">
+            <div className="mt-10 bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-400 rounded-2xl p-8 text-white text-center">
               <h2 className="text-2xl font-extrabold mb-2">Ready to Begin?</h2>
               <p className="text-purple-200 mb-6 max-w-md mx-auto text-sm">
                 Bookmark this roadmap, explore colleges that match your profile, and take the first step today.

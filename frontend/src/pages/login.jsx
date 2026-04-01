@@ -21,26 +21,36 @@ function Login() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email || !formData.password) {
-      setError("All fields are required.");
-      return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!formData.email || !formData.password) {
+    setError("All fields are required.");
+    return;
+  }
+
+  try {
+    const response = await loginUser({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (response.data.access_token) {
+      localStorage.setItem("token", response.data.access_token);
     }
-    try {
-      const response = await loginUser({
-        email: formData.email,
-        password: formData.password,
-      });
-      if (response.data.access_token) {
-        localStorage.setItem("token", response.data.access_token);
-      }
-      login({ name: formData.email });
-      navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Invalid email or password");
-    }
-  };
+
+    // ✅ Use name from API response — it's right there
+    login({
+      name: response.data.name,
+      email: formData.email,
+    });
+
+    navigate("/");
+
+  } catch (err) {
+    setError(err.response?.data?.detail || "Invalid email or password");
+  }
+};
 
  const handleForgotPassword = async (e) => {
   e.preventDefault();

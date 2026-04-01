@@ -466,7 +466,7 @@ export default function Dashboard() {
         <div className="grid md:grid-cols-3 gap-4 pb-6">
           {[
             {icon:"📚",title:"Explore colleges",  desc:"Find colleges matching your career and score",action:"Browse colleges →",href:"/result",      bg:"bg-purple-50",text:"text-purple-900",sub:"text-purple-700"},
-            {icon:"🗺️",title:"View roadmap",      desc:"Step-by-step path to your target career",      action:"See your path →", href:"/result",      bg:"bg-green-50", text:"text-green-900", sub:"text-green-700"},
+            {icon:"🗺️",title:"View roadmap",      desc:"Step-by-step path to your target career",      action:"See your path →", href:"/roadmap",      bg:"bg-green-50", text:"text-green-900", sub:"text-green-700"},
             {icon:"🔁",title:"Try another level", desc:"Explore career paths for a different level",   action:"Start new quiz →",href:"/career-path", bg:"bg-amber-50", text:"text-amber-900", sub:"text-amber-700"},
           ].map((item,i) => (
             <div key={i} className={`${item.bg} rounded-2xl p-5 cursor-pointer hover:shadow-sm transition-shadow`}
