@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+load_dotenv()
 
 from app.database.connection import engine
 from app.database.base import Base
@@ -14,8 +16,9 @@ from app.routes import quiz_routes
 from app.routes import result_routes
 from app.routes import dashboard_routes
 from app.routes import college_routes
+from app.routes.chat_routes import router as chat_router
 
-from app.predict import router as ml_router
+from app.predict import router as ml_router # ← FIXED path
 
 app = FastAPI(
     title="AimRoute AI Career API",
@@ -39,6 +42,7 @@ app.include_router(quiz_routes.router,      prefix="/quiz",  tags=["Quiz"])
 app.include_router(result_routes.router,                     tags=["Results"])
 app.include_router(dashboard_routes.router,                  tags=["Dashboard"])
 app.include_router(college_routes.router,                    tags=["Colleges"])
+app.include_router(chat_router,                              tags=["Chat"])   # ← ADDED
 app.include_router(ml_router,               prefix="/ml",    tags=["ML"])
 
 @app.get("/")
