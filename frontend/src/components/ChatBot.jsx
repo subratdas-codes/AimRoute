@@ -187,7 +187,7 @@ const ChatBot = () => {
                 ➤
               </button>
             </div>
-            <p className="text-xs text-gray-400 text-center mt-2">Powered by Claude AI</p>
+            <p className="text-xs text-gray-400 text-center mt-2">Powered by AimRoute AI</p>
           </div>
         </div>
       )}
