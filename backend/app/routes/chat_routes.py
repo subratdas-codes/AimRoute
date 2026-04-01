@@ -1,89 +1,133 @@
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-from typing import List
-import httpx
 import os
-#from app.utils.dependencies import get_current_user_optional
+import httpx
+from dotenv import load_dotenv
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
 
-router = APIRouter(prefix="/chat", tags=["Chat"])
+load_dotenv()  # ← load .env right here in this file too
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+router = APIRouter(prefix="/chat", tags=["chat"])
 
-class ChatMessage(BaseModel):
+# ← Read keys inside functions, not at module level
+def get_groq_key(): return os.getenv("GROQ_API_KEY", "")
+def get_gemini_key(): return os.getenv("GEMINI_API_KEY", "")
+
+SYSTEM_PROMPT = """You are AimRoute's AI career counselor — a warm, knowledgeable guide helping Indian students (10th to PG level) make smart career decisions.
+
+You help with:
+- Career analysis and comparisons (e.g., "Should I choose CSE or ECE?")
+- College guidance based on their NIRF scores, state, and percentage
+- Entrance exam prep: JEE, NEET, CAT, CLAT, GATE, UPSC, etc.
+- Skill gap analysis and what to learn next
+- Salary expectations and growth paths
+- Roadmap planning — what to do after 10th, 12th, graduation
+- Navigating AimRoute features (quiz, results, dashboard, roadmap page)
+
+Rules:
+- Always relate answers to the student's level, percentage, and career match if provided in context
+- Be encouraging but realistic — don't overpromise
+- Keep responses concise (3-6 sentences usually) unless a detailed breakdown is needed
+- Use simple English; avoid heavy jargon
+- If asked something unrelated to careers/education, politely redirect
+- Never mention that you are powered by Groq or Gemini or any third-party AI
+- Always present yourself as AimRoute's built-in AI assistant"""
+
+
+class Message(BaseModel):
     role: str
     content: str
 
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
-    context: dict = {}
+    messages: List[Message]
+    context: Optional[Dict[str, Any]] = {}
 
-def build_system_prompt(context: dict) -> str:
+
+def build_context_prefix(context: dict) -> str:
     if not context:
-        return """You are AimRoute AI, a friendly and expert Indian career guidance counsellor.
-Help students with career advice, college selection, exam preparation, salary insights,
-and skill development. Keep responses concise, practical, and encouraging.
-Use Indian context — INR salaries, Indian colleges, Indian exams (JEE/NEET/CAT/GATE).
-Always respond in a warm, mentor-like tone. Use bullet points for clarity."""
+        return ""
+    parts = []
+    if context.get("level"):        parts.append(f"Student level: {context['level']}")
+    if context.get("percentage"):   parts.append(f"Percentage: {context['percentage']}%")
+    if context.get("dominant_category"): parts.append(f"Top interest area: {context['dominant_category']}")
+    if context.get("top_career"):   parts.append(f"Best career match: {context['top_career']}")
+    if context.get("fit_label"):    parts.append(f"Fit label: {context['fit_label']}")
+    return "[Student profile: " + ", ".join(parts) + "]\n\n" if parts else ""
 
-    top_careers = ""
-    for i, c in enumerate(context.get("top_careers", []), 1):
-        top_careers += f"\n  {i}. {c.get('career','N/A')} ({c.get('fit','N/A')}) — {c.get('salary_min','N/A')} to {c.get('salary_max','N/A')}"
 
-    return f"""You are AimRoute AI, a friendly and expert Indian career guidance counsellor built into the AimRoute platform.
+async def call_groq(messages_payload: list, system: str) -> str:
+    key = get_groq_key()
+    print(f"[Groq] Using key: {key[:12]}...")  # debug
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "system", "content": system}] + messages_payload,
+        "max_tokens": 700,
+        "temperature": 0.7,
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        res = await client.post(url, json=body, headers=headers)
+        print(f"[Groq] Status: {res.status_code}, Body: {res.text[:200]}")  # debug
+        res.raise_for_status()
+        data = res.json()
+        return data["choices"][0]["message"]["content"].strip()
 
-STUDENT PROFILE:
-- Education Level: {context.get('level','N/A').upper()} passed
-- Academic Score: {context.get('percentage','N/A')}%
-- Dominant Interest: {context.get('dominant_category','N/A')}
-- Top Career Matches: {top_careers}
 
-AIMROUTE PLATFORM FEATURES YOU CAN GUIDE ABOUT:
-- Career Quiz: Students can take quiz at /career-path for all levels (10th/12th/grad/pg)
-- Result Page: Shows top career matches, salary ranges, roadmap, college suggestions
-- College Finder: Suggests colleges filtered by state and percentage from NIRF 2024 data
-- Roadmap Page: Step by step career path with exams, skills, timeline
-- Dashboard: Tracks all quiz attempts, history, career stats
-- Settings: Change password, manage account
-
-YOUR EXPERTISE:
-1. Career depth analysis — deep dive into their specific career paths with Indian context
-2. College guidance — which colleges suit their % and interest (NIRF ranked)
-3. Exam preparation — specific exams with timeline (JEE/NEET/CAT/GATE/GRE etc)
-4. Salary insights — realistic INR salary ranges and negotiation tips
-5. Skill gap analysis — what skills they're missing for their top career
-6. Career comparison — compare career options side by side
-7. Platform help — guide them to use AimRoute features effectively
-
-RULES:
-- Always reference their actual data ({context.get('percentage','N/A')}%, {context.get('dominant_category','N/A')}, {context.get('level','N/A')})
-- Keep responses under 250 words unless asked for more detail
-- Use bullet points for lists
-- Be encouraging but realistic
-- Suggest next actionable steps always
-- If they ask about colleges, remind them to use the state filter on the Result page
-- If they ask about their roadmap, remind them to visit /roadmap page
-- Use Indian rupees (₹) for all salary mentions"""
+async def call_gemini(messages_payload: list, system: str) -> str:
+    key = get_gemini_key()
+    model = "gemini-2.0-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+    contents = []
+    for msg in messages_payload:
+        role = "user" if msg["role"] == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+    body = {
+        "system_instruction": {"parts": [{"text": system}]},
+        "contents": contents,
+        "generationConfig": {"maxOutputTokens": 700, "temperature": 0.7},
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        res = await client.post(url, json=body)
+        res.raise_for_status()
+        data = res.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
 @router.post("/message")
 async def chat_message(request: ChatRequest):
-    system_prompt = build_system_prompt(request.context)
+    groq_key = get_groq_key()
+    gemini_key = get_gemini_key()
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 1000,
-                "system": system_prompt,
-                "messages": [{"role": m.role, "content": m.content} for m in request.messages],
-            },
-        )
-        data = response.json()
-        reply = data.get("content", [{}])[0].get("text", "Sorry, I could not process that.")
-        return {"reply": reply}
+    print(f"[Chat] Groq key present: {bool(groq_key)}, Gemini key present: {bool(gemini_key)}")
+
+    if not groq_key and not gemini_key:
+        raise HTTPException(status_code=500, detail="No AI API keys configured.")
+
+    context_prefix = build_context_prefix(request.context or {})
+    messages_payload = []
+    for i, msg in enumerate(request.messages):
+        content = msg.content
+        if i == 0 and msg.role == "user" and context_prefix:
+            content = context_prefix + content
+        messages_payload.append({"role": msg.role, "content": content})
+
+    if groq_key:
+        try:
+            reply = await call_groq(messages_payload, SYSTEM_PROMPT)
+            return {"reply": reply}
+        except Exception as e:
+            print(f"[Groq failed] {e} — trying Gemini fallback")
+
+    if gemini_key:
+        try:
+            reply = await call_gemini(messages_payload, SYSTEM_PROMPT)
+            return {"reply": reply}
+        except Exception as e:
+            print(f"[Gemini failed] {e}")
+            raise HTTPException(status_code=500, detail="Both AI providers failed. Please try again.")
+
+    raise HTTPException(status_code=500, detail="No working AI provider available.")
