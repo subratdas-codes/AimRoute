@@ -11,7 +11,6 @@ const questions = [
       { text: "I have completed 12th (Arts)", category: "After12thArts" }
     ]
   },
-
   {
     question: "Which subject do you enjoy the most?",
     options: [
@@ -21,7 +20,6 @@ const questions = [
       { text: "Fine Arts / Literature", category: "Creative" }
     ]
   },
-
   {
     question: "What type of problems do you enjoy solving?",
     options: [
@@ -31,7 +29,6 @@ const questions = [
       { text: "Creative design challenges", category: "Creative" }
     ]
   },
-
   {
     question: "Which activity sounds more exciting?",
     options: [
@@ -41,7 +38,6 @@ const questions = [
       { text: "Designing a brand logo", category: "Creative" }
     ]
   },
-
   {
     question: "How do people describe you?",
     options: [
@@ -51,7 +47,6 @@ const questions = [
       { text: "Creative and imaginative", category: "Creative" }
     ]
   },
-
   {
     question: "What kind of work environment do you prefer?",
     options: [
@@ -61,7 +56,6 @@ const questions = [
       { text: "Studio or creative workspace", category: "Creative" }
     ]
   },
-
   {
     question: "What motivates you the most?",
     options: [
@@ -71,7 +65,6 @@ const questions = [
       { text: "Expressing ideas artistically", category: "Creative" }
     ]
   },
-
   {
     question: "Do you enjoy leadership roles?",
     options: [
@@ -81,7 +74,6 @@ const questions = [
       { text: "I lead creative teams", category: "Creative" }
     ]
   },
-
   {
     question: "Are you interested in serving the nation?",
     options: [
@@ -91,7 +83,6 @@ const questions = [
       { text: "Through administration", category: "Government" }
     ]
   },
-
   {
     question: "Which skill are you strongest in?",
     options: [
@@ -101,7 +92,6 @@ const questions = [
       { text: "Designing and storytelling", category: "Creative" }
     ]
   },
-
   {
     question: "What kind of future do you imagine?",
     options: [
@@ -111,7 +101,6 @@ const questions = [
       { text: "Working in media or design", category: "Creative" }
     ]
   },
-
   {
     question: "Do you enjoy analyzing data?",
     options: [
@@ -121,7 +110,6 @@ const questions = [
       { text: "Not really", category: "Creative" }
     ]
   },
-
   {
     question: "Would you prefer job stability or creativity?",
     options: [
@@ -133,10 +121,18 @@ const questions = [
   }
 ];
 
+// Map education level to level key
+const EDUCATION_LEVEL_MAP = {
+  After10th:           { level: "10th",  level_label: "10TH" },
+  After12thScience:    { level: "12th",  level_label: "12TH" },
+  After12thCommerce:   { level: "12th",  level_label: "12TH" },
+  After12thArts:       { level: "12th",  level_label: "12TH" },
+};
+
 function Quiz() {
   const [current, setCurrent] = useState(0);
-  const [scores, setScores] = useState({});
-  const navigate = useNavigate();
+  const [scores, setScores]   = useState({});
+  const navigate              = useNavigate();
 
   const handleAnswer = (category) => {
     let updatedScores = { ...scores };
@@ -152,55 +148,75 @@ function Quiz() {
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
     } else {
+      // ── Compute dominant category ──
+      const categoryScores = { ...updatedScores };
+      delete categoryScores.educationLevel;
+
+      const dominant_category = Object.keys(categoryScores).length > 0
+        ? Object.keys(categoryScores).reduce((a, b) =>
+            categoryScores[a] >= categoryScores[b] ? a : b
+          )
+        : "Technology";
+
+      // ── Compute level from education answer ──
+      const eduLevel = EDUCATION_LEVEL_MAP[updatedScores.educationLevel];
+      const level       = eduLevel?.level       || "12th";
+      const level_label = eduLevel?.level_label || "12TH";
+
+      // ── Save to localStorage so ChatBot picks it up ──
+      const career_result = {
+        dominant_category,
+        level,
+        level_label,
+        percentage: null, // quiz doesn't ask percentage — kept null
+        scores: categoryScores,
+      };
+
+      localStorage.setItem("career_result", JSON.stringify(career_result));
+
       navigate("/result", { state: { scores: updatedScores } });
     }
   };
 
- return (
-  <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-purple-50 px-4">
+      <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-2xl">
 
-    <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-2xl">
-
-      {/* PROGRESS BAR */}
-      <div className="mb-6">
-
-        <div className="flex justify-between text-sm text-gray-500 mb-2">
-          <span>Question {current + 1}</span>
-          <span>{questions.length} Total</span>
+        {/* PROGRESS BAR */}
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-500 mb-2">
+            <span>Question {current + 1}</span>
+            <span>{questions.length} Total</span>
+          </div>
+          <div className="w-full bg-gray-200 h-2 rounded-full">
+            <div
+              className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${((current + 1) / questions.length) * 100}%` }}
+            />
+          </div>
         </div>
 
-        <div className="w-full bg-gray-200 h-2 rounded-full">
-          <div
-            className="bg-purple-600 h-2 rounded-full transition-all duration-500"
-            style={{
-              width: `${((current + 1) / questions.length) * 100}%`
-            }}
-          ></div>
+        {/* QUESTION */}
+        <h2 className="text-2xl font-bold mb-8 text-center">
+          {questions[current].question}
+        </h2>
+
+        {/* OPTIONS */}
+        <div className="space-y-4">
+          {questions[current].options.map((opt, index) => (
+            <button
+              key={index}
+              onClick={() => handleAnswer(opt.category)}
+              className="w-full text-left px-6 py-4 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-400 transition duration-200"
+            >
+              {opt.text}
+            </button>
+          ))}
         </div>
 
       </div>
-
-      {/* QUESTION */}
-      <h2 className="text-2xl font-bold mb-8 text-center">
-        {questions[current].question}
-      </h2>
-
-      {/* OPTIONS */}
-      <div className="space-y-4">
-        {questions[current].options.map((opt, index) => (
-          <button
-            key={index}
-            onClick={() => handleAnswer(opt.category)}
-            className="w-full text-left px-6 py-4 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-400 transition duration-200"
-          >
-            {opt.text}
-          </button>
-        ))}
-      </div>
-
     </div>
-  </div>
-);
+  );
 }
 
 export default Quiz;
