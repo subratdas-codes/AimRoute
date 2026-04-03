@@ -19,6 +19,8 @@ import Services        from "./pages/Services";
 import ResetPassword   from "./pages/ResetPassword";
 import Settings        from "./pages/Settings";
 
+import AdminPanel      from "./pages/AdminPanel";
+import AdminLogin      from "./pages/AdminLogin";
 // ── Route guard — redirects guests to /login ─────────────────
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -47,9 +49,14 @@ function App() {
         {/* Protected — login required */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/settings"  element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        
+            {/* Admin Pannel */}
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminPanel />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
        <ChatBot />
     </> 

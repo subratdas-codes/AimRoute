@@ -19,6 +19,7 @@ from app.routes import college_routes
 from app.routes.chat_routes import router as chat_router
 
 from app.predict import router as ml_router # ← FIXED path
+from app.routes.admin_routes import router as admin_router  #Admin pannel
 
 app = FastAPI(
     title="AimRoute AI Career API",
@@ -44,6 +45,7 @@ app.include_router(dashboard_routes.router,                  tags=["Dashboard"])
 app.include_router(college_routes.router,                    tags=["Colleges"])
 app.include_router(chat_router,                              tags=["Chat"])   # ← ADDED
 app.include_router(ml_router,               prefix="/ml",    tags=["ML"])
+app.include_router(admin_router)
 
 @app.get("/")
 def home():
