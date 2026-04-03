@@ -1,5 +1,4 @@
 # backend/app/utils/college_engine.py
-# Replace your entire file with this
 
 import pandas as pd
 import os
@@ -21,8 +20,6 @@ def get_college_df():
     _df["state"] = _df["state"].str.strip().str.title()
     _df["city"]  = _df["city"].str.strip().str.title()
 
-    # ── Dynamic cutoff based on NIRF rank ────────────────────
-    # NIRF doesn't publish cutoffs, so we compute them from rank
     def compute_cutoff(row):
         try:
             rank = float(row["nirf_rank"])
@@ -35,7 +32,6 @@ def get_college_df():
         except Exception:
             return 55
 
-    # Only overwrite rows where min_cutoff is missing or zero
     _df["min_cutoff"] = _df.apply(
         lambda row: compute_cutoff(row)
         if (pd.isna(row.get("min_cutoff")) or str(row.get("min_cutoff", "0")).strip() in ["", "0", "0.0"])
@@ -44,6 +40,30 @@ def get_college_df():
     )
 
     return _df
+
+
+def score_college(row, percentage):
+    s = 0
+    try:
+        rank = float(row["nirf_rank"])
+        if rank <= 10:    s += 50
+        elif rank <= 50:  s += 35
+        elif rank <= 100: s += 20
+        elif rank <= 200: s += 10
+        else:             s += 5
+    except Exception:
+        s += 1
+    try:
+        s += float(row["nirf_score"]) * 0.3
+    except Exception:
+        pass
+    try:
+        gap = percentage - float(row["min_cutoff"])
+        if 0 <= gap <= 10:  s += 20
+        elif gap > 10:      s += 10
+    except Exception:
+        pass
+    return s
 
 
 def suggest_colleges(
@@ -62,7 +82,6 @@ def suggest_colleges(
         "Science":    ["Engineering", "Pharmacy", "Colleges"],
     }
     nirf_cats = category_map.get(dominant_category, ["Colleges"])
-
     filtered = df[df["category"].isin(nirf_cats)].copy()
 
     # State filter with fallback to all India
@@ -70,40 +89,38 @@ def suggest_colleges(
     if len(state_df) < 5:
         state_df = filtered
 
-    # Eligibility filter — fallback to all if none qualify
-    eligible = state_df[state_df["min_cutoff"] <= percentage].copy()
-    if eligible.empty:
-        eligible = state_df.copy()
+    # Split into eligible and aspirational
+    eligible    = state_df[state_df["min_cutoff"] <= percentage].copy()
+    aspirational = state_df[state_df["min_cutoff"] > percentage].copy()
 
-    # ── ML relevance scoring ──────────────────────────────────
-    def score(row):
-        s = 0
-        try:
-            rank = float(row["nirf_rank"])
-            if rank <= 10:    s += 50
-            elif rank <= 50:  s += 35
-            elif rank <= 100: s += 20
-            elif rank <= 200: s += 10
-            else:             s += 5
-        except Exception:
-            s += 1
-        try:
-            s += float(row["nirf_score"]) * 0.3
-        except Exception:
-            pass
-        try:
-            gap = percentage - float(row["min_cutoff"])
-            if 0 <= gap <= 10:  s += 20
-            elif gap > 10:      s += 10
-        except Exception:
-            pass
-        return s
+    # Score both groups separately
+    if not eligible.empty:
+        eligible["relevance_score"] = eligible.apply(
+            lambda row: score_college(row, percentage), axis=1
+        )
+        eligible = eligible.sort_values("relevance_score", ascending=False)
+        eligible["eligibility"] = "eligible"
 
-    eligible["relevance_score"] = eligible.apply(score, axis=1)
+    if not aspirational.empty:
+        aspirational["relevance_score"] = aspirational.apply(
+            lambda row: score_college(row, percentage), axis=1
+        )
+        aspirational = aspirational.sort_values("relevance_score", ascending=False)
+        aspirational["eligibility"] = "aspirational"
+
+    # Combine — eligible first, then aspirational
+    # If no eligible colleges found, show aspirational only
+    if eligible.empty and aspirational.empty:
+        return []
+    elif eligible.empty:
+        combined = aspirational
+    elif aspirational.empty:
+        combined = eligible
+    else:
+        combined = pd.concat([eligible, aspirational], ignore_index=True)
 
     result = (
-        eligible
-        .sort_values("relevance_score", ascending=False)
+        combined
         .drop(columns=["relevance_score"])
         .fillna("")
         .to_dict(orient="records")
