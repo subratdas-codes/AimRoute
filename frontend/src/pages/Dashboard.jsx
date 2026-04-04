@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import ScholarshipFinder from "../components/ScholarshipFinder";
 
 import ExamEligibilityChecker from "../components/ExamEligibilityChecker";
 
@@ -466,6 +467,10 @@ export default function Dashboard() {
 
         {/* EXAM ELIGIBILITY CHECKER */}
         <ExamEligibilityChecker />
+
+
+        {/*  Scholarship CHECKER */}
+        <ScholarshipFinder />
 
         {/* NEXT STEPS */}
         <div className="grid md:grid-cols-3 gap-4 pb-6">
