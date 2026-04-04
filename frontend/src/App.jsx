@@ -1,9 +1,7 @@
-// frontend/src/App.jsx
-
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop     from "./components/ScrollToTop";
 import Navbar          from "./components/Navbar";
 import Home            from "./pages/Home/Home";
 import Login           from "./pages/login";
@@ -19,7 +17,11 @@ import Services        from "./pages/Services";
 import ResetPassword   from "./pages/ResetPassword";
 import Settings        from "./pages/Settings";
 
-// ── Route guard — redirects guests to /login ─────────────────
+import AdminPanel      from "./pages/AdminPanel";
+import AdminLogin      from "./pages/AdminLogin";
+
+const ADMIN_ROUTES = ["/admin", "/admin-login"];
+
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" state={{ from: "protected" }} replace />;
@@ -27,12 +29,15 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
+  const location = useLocation();
+  const isAdminRoute = ADMIN_ROUTES.some(path => location.pathname.startsWith(path));
+
   return (
     <>
       <ScrollToTop />
-      <Navbar />
+      {!isAdminRoute && <Navbar />}
       <Routes>
-        {/* Public — guests can access */}
+        {/* Public */}
         <Route path="/"                   element={<Home />} />
         <Route path="/login"              element={<Login />} />
         <Route path="/signup"             element={<Signup />} />
@@ -44,15 +49,19 @@ function App() {
         <Route path="/quiz"               element={<Quiz />} />
         <Route path="/reset-password"     element={<ResetPassword />} />
 
-        {/* Protected — login required */}
+        {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/settings"  element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+        {/* Admin */}
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin"       element={<AdminPanel />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-       <ChatBot />
-    </> 
+      {!isAdminRoute && <ChatBot />}
+    </>
   );
 }
 

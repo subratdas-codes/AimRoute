@@ -1,22 +1,15 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-
   const [user, setUser] = useState(() => {
     try {
       const token = localStorage.getItem("token");
       const savedUser = localStorage.getItem("user");
       if (token && savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.name && parsed.name !== parsed.email) {
-          return parsed;
-        }
+        return JSON.parse(savedUser);
       }
-      // Clear bad data
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
       return null;
     } catch {
       localStorage.removeItem("token");
