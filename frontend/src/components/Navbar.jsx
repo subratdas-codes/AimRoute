@@ -1,10 +1,11 @@
 // frontend/src/components/Navbar.jsx
-// Replace your existing Navbar.jsx with this
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.PNG";
+
+const ADMIN_EMAILS = ["admin@aimroute.com"]; // ← put your admin email here
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -36,17 +37,15 @@ function Navbar() {
     return "U";
   };
 
+  const isAdmin = user && ADMIN_EMAILS.includes(user.email);
+
   return (
     <div className="sticky top-0 z-50 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-700 shadow-lg">
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
 
         {/* ── Logo + Wordmark ── */}
-        <Link to="/" className="flex items-center  group">
-
-          {/* Logo image in a clean circle frame */}
+        <Link to="/" className="flex items-center group">
           <img src={logo} alt="AimRoute Logo" className="h-15 w-auto rounded-full object-contain bg-transparent" />
-
-          {/* Wordmark */}
           <div className="flex flex-col leading-none">
             <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-sm">
               Aim<span className="text-pink-200">Route</span>
@@ -60,24 +59,15 @@ function Navbar() {
         {/* ── Nav links ── */}
         <div className="flex items-center gap-7 font-medium">
 
-          <Link
-            to="/"
-            className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm"
-          >
+          <Link to="/" className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm">
             Home
           </Link>
 
-          <Link
-            to="/services"
-            className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm"
-          >
+          <Link to="/services" className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm">
             Services
           </Link>
 
-          <Link
-            to="/career-path"
-            className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm flex items-center gap-1"
-          >
+          <Link to="/career-path" className="text-white/90 hover:text-white text-sm transition-colors hover:drop-shadow-sm flex items-center gap-1">
             Explore Path
             <span className="text-xs">🚀</span>
           </Link>
@@ -96,12 +86,15 @@ function Navbar() {
           {user && (
             <div className="relative" ref={dropdownRef}>
 
-              {/* Avatar button */}
+              {/* Avatar button — shows crown for admin */}
               <button
                 onClick={() => setOpen(p => !p)}
-                className="w-9 h-9 rounded-full bg-white text-purple-700 flex items-center justify-center font-bold text-sm hover:scale-105 transition-transform shadow-md ring-2 ring-white/40 hover:ring-white/80"
+                className="w-9 h-9 rounded-full bg-white text-purple-700 flex items-center justify-center font-bold text-sm hover:scale-105 transition-transform shadow-md ring-2 ring-white/40 hover:ring-white/80 relative"
               >
                 {getInitial()}
+                {isAdmin && (
+                  <span className="absolute -top-1.5 -right-1.5 text-xs leading-none">👑</span>
+                )}
               </button>
 
               {/* Dropdown */}
@@ -121,9 +114,25 @@ function Navbar() {
                         <p className="text-xs text-gray-400 truncate">
                           {user?.email || ""}
                         </p>
+                        {isAdmin && (
+                          <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-semibold rounded-full">
+                            Admin
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
+
+                  {/* Admin Panel — only for admins */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => { setOpen(false); navigate("/admin"); }}
+                      className="w-full text-left px-4 py-3 hover:bg-purple-50 text-sm flex items-center gap-3 transition-colors border-b border-gray-100"
+                    >
+                      <span className="text-base">🛡️</span>
+                      <span className="font-semibold text-purple-600">Admin Panel</span>
+                    </button>
+                  )}
 
                   {/* Dashboard */}
                   <button
