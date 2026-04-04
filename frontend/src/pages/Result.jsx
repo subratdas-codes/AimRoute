@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
+import confetti from "canvas-confetti";
 
 const INDIAN_STATES = [
   "All States","Andhra Pradesh","Assam","Bihar","Delhi","Gujarat","Haryana",
@@ -38,6 +39,10 @@ const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
   * { font-family: 'Sora', sans-serif; box-sizing: border-box; }
   @keyframes modalIn { from{opacity:0;transform:scale(0.85) translateY(30px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  @keyframes congratsIn { 0%{opacity:0;transform:scale(0.5) rotate(-10deg)} 60%{transform:scale(1.08) rotate(2deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+  @keyframes congratsOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.85) translateY(-20px)} }
+  @keyframes emojiPop { 0%{transform:scale(0) rotate(-20deg)} 60%{transform:scale(1.3) rotate(5deg)} 100%{transform:scale(1) rotate(0deg)} }
+  @keyframes shimmerText { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
   @keyframes slideUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
   @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-18px) rotate(4deg)} }
   @keyframes floatB { 0%,100%{transform:translateY(0) rotate(3deg)} 50%{transform:translateY(-14px) rotate(-5deg)} }
@@ -51,13 +56,6 @@ const globalStyles = `
   @keyframes trailMove { 0%{stroke-dashoffset:300} 100%{stroke-dashoffset:-300} }
   @keyframes countPop { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
   @keyframes orbitDot { 0%{transform:rotate(0deg) translateX(50px) rotate(0deg)} 100%{transform:rotate(360deg) translateX(50px) rotate(-360deg)} }
-  @keyframes burstIn { from{opacity:0;transform:scale(0.6) translateY(40px)} to{opacity:1;transform:scale(1) translateY(0)} }
-  @keyframes congratsFadeOut { from{opacity:1} to{opacity:0;pointer-events:none} }
-  @keyframes confettiFall0  { 0%{transform:translateY(-20px) rotate(0deg);opacity:1}   100%{transform:translateY(130px) rotate(720deg);opacity:0} }
-  @keyframes confettiFall1  { 0%{transform:translateY(-20px) rotate(45deg);opacity:1}  100%{transform:translateY(110px) rotate(600deg);opacity:0} }
-  @keyframes confettiFall2  { 0%{transform:translateY(-20px) rotate(90deg);opacity:1}  100%{transform:translateY(150px) rotate(800deg);opacity:0} }
-  @keyframes confettiFall3  { 0%{transform:translateY(-20px) rotate(135deg);opacity:1} 100%{transform:translateY(120px) rotate(540deg);opacity:0} }
-  @keyframes emojiPop { 0%{transform:scale(0)} 60%{transform:scale(1.25)} 100%{transform:scale(1)} }
   .slide-up { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
   .brand-btn {
     background: linear-gradient(135deg,#e91e8c,#7c3aed);
@@ -86,9 +84,6 @@ const STARS = [
   {top:"15%",left:"60%",delay:"0.5s"},{top:"75%",left:"75%",delay:"1.5s"},
   {top:"40%",left:"95%",delay:"2s"},{top:"88%",left:"40%",delay:"0.3s"},
 ];
-
-const CONFETTI_COLORS = ["#e91e8c","#7c3aed","#f59e0b","#10b981","#3b82f6","#ef4444","#06b6d4"];
-const CONFETTI_COUNT  = 22;
 
 function BgScene() {
   return (
@@ -138,156 +133,6 @@ function BgScene() {
 
 const MODAL_STYLE = `@keyframes modalIn{from{opacity:0;transform:scale(0.85) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}`;
 
-/* ── Congratulations Burst Overlay ── */
-const CongratsBurst = ({ name, onDone }) => {
-  const [fading, setFading] = useState(false);
-
-  useEffect(() => {
-    const fadeTimer   = setTimeout(() => setFading(true), 2900);
-    const removeTimer = setTimeout(() => onDone(), 3350);
-    return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
-  }, [onDone]);
-
-  // Pre-generate confetti so positions are stable
-  const confetti = React.useMemo(() =>
-    Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
-      left:      `${4 + (i / CONFETTI_COUNT) * 92}%`,
-      top:       `${6 + (i % 5) * 7}%`,
-      size:      i % 3 === 0 ? 11 : 7,
-      isPill:    i % 4 === 0,
-      color:     CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      animIndex: i % 4,
-      duration:  `${1.1 + (i % 5) * 0.25}s`,
-      delay:     `${(i % 8) * 0.1}s`,
-    })), []);
-
-  return (
-    <div style={{
-      position:       "fixed",
-      inset:          0,
-      zIndex:         200,
-      display:        "flex",
-      alignItems:     "center",
-      justifyContent: "center",
-      background:     "rgba(0,0,0,0.55)",
-      backdropFilter: "blur(8px)",
-      transition:     "opacity 0.45s ease",
-      opacity:        fading ? 0 : 1,
-      pointerEvents:  fading ? "none" : "auto",
-    }}>
-
-      {/* Confetti */}
-      {confetti.map((c, i) => (
-        <div key={i} style={{
-          position:         "absolute",
-          top:              c.top,
-          left:             c.left,
-          width:            c.size,
-          height:           c.isPill ? c.size * 2 : c.size,
-          borderRadius:     c.isPill ? 99 : "50%",
-          background:       c.color,
-          opacity:          0,
-          animation:        `confettiFall${c.animIndex} ${c.duration} ease-in forwards`,
-          animationDelay:   c.delay,
-        }}/>
-      ))}
-
-      {/* Card */}
-      <div style={{
-        background:    "white",
-        borderRadius:  32,
-        padding:       "52px 44px 44px",
-        maxWidth:      440,
-        width:         "90%",
-        textAlign:     "center",
-        animation:     "burstIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards",
-        position:      "relative",
-        overflow:      "hidden",
-      }}>
-        {/* top gradient accent bar */}
-        <div style={{
-          position:   "absolute",
-          top:        0, left:0, right:0,
-          height:     5,
-          background: "linear-gradient(90deg,#e91e8c,#7c3aed,#e91e8c)",
-          backgroundSize: "200% 200%",
-          animation:  "gradientShift 3s ease infinite",
-        }}/>
-
-        {/* Big emoji */}
-        <div style={{
-          fontSize:         68,
-          lineHeight:       1,
-          marginBottom:     18,
-          display:          "inline-block",
-          animation:        "emojiPop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",
-          animationDelay:   "0.15s",
-          transform:        "scale(0)",
-        }}>🎉</div>
-
-        <h2 style={{
-          fontSize:      28,
-          fontWeight:    800,
-          color:         "#1a1a2e",
-          marginBottom:  10,
-          letterSpacing: "-0.5px",
-          lineHeight:    1.2,
-        }}>
-          Congratulations{name ? `,` : "!"}<br/>
-          {name && <span style={{
-            background:           "linear-gradient(135deg,#e91e8c,#7c3aed)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor:  "transparent",
-          }}>{name}!</span>}
-        </h2>
-
-        <p style={{
-          color:        "#9ca3af",
-          fontSize:     14,
-          marginBottom: 28,
-          lineHeight:   1.7,
-        }}>
-          Your personalised career analysis is ready.<br/>
-          Scroll down to explore your top matches.
-        </p>
-
-        {/* Animated loading pill */}
-        <div style={{
-          display:        "inline-flex",
-          alignItems:     "center",
-          gap:            10,
-          background:     "linear-gradient(135deg,#fce7f3,#ede9fe)",
-          border:         "1.5px solid #e9d5ff",
-          borderRadius:   99,
-          padding:        "10px 22px",
-        }}>
-          {/* Spinning ring */}
-          <div style={{
-            width:          16,
-            height:         16,
-            borderRadius:   "50%",
-            border:         "2.5px solid #e9d5ff",
-            borderTopColor: "#e91e8c",
-            animation:      "spin-slow 0.9s linear infinite",
-            flexShrink:     0,
-          }}/>
-          <span style={{color:"#7c3aed", fontSize:13, fontWeight:700}}>
-            Loading your results…
-          </span>
-        </div>
-
-        {/* Skip hint */}
-        <p style={{
-          fontSize:   11,
-          color:      "#d1d5db",
-          marginTop:  18,
-          marginBottom: 0,
-        }}>Auto-dismisses in a moment</p>
-      </div>
-    </div>
-  );
-};
-
 const GuestLoginModal = ({ onClose, onLogin, onSignup }) => (
   <div style={{position:"fixed",inset:0,zIndex:50,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
     <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.45)",backdropFilter:"blur(6px)"}} onClick={onClose}/>
@@ -330,6 +175,69 @@ const SuccessModal = ({ onClose, onDashboard }) => (
   </div>
 );
 
+const CongratsOverlay = ({ onClose, closing }) => (
+  <div style={{
+    position:"fixed",inset:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",
+    background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",
+    animation: closing ? "congratsOut 0.4s ease forwards" : "none",
+  }}>
+    <div style={{
+      background:"white",borderRadius:32,padding:"44px 40px",maxWidth:400,width:"90%",textAlign:"center",
+      boxShadow:"0 40px 100px rgba(124,58,237,0.35)",
+      animation: closing ? "none" : "congratsIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",
+      position:"relative",overflow:"hidden",
+    }}>
+      {/* top gradient bar */}
+      <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:"linear-gradient(90deg,#e91e8c,#7c3aed,#e91e8c)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
+
+      {/* emoji */}
+      <div style={{fontSize:72,marginBottom:12,display:"block",animation:"emojiPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",lineHeight:1}}>🎉</div>
+
+      <h2 style={{
+        fontSize:30,fontWeight:800,marginBottom:8,letterSpacing:"-0.5px",
+        background:"linear-gradient(135deg,#e91e8c,#7c3aed)",
+        backgroundSize:"200% 200%",
+        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+        animation:"shimmerText 3s linear infinite",
+      }}>Congratulations!</h2>
+
+      <p style={{fontSize:15,color:"#6b7280",marginBottom:6,fontWeight:600}}>
+        You've completed your Career Assessment 🚀
+      </p>
+      <p style={{fontSize:13,color:"#a855f7",fontWeight:600,marginBottom:28}}>
+        Your personalised results are ready below ✨
+      </p>
+
+      <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
+        {["🏆 Best Match Found","📊 Colleges Listed","🗺️ Roadmap Ready"].map((t,i)=>(
+          <span key={i} style={{fontSize:11,padding:"5px 12px",borderRadius:99,background:`linear-gradient(135deg,${i%2===0?"#fce7f3,#ede9fe":"#ede9fe,#fce7f3"})`,border:"1.5px solid #e9d5ff",color:"#7c3aed",fontWeight:700}}>
+            {t}
+          </span>
+        ))}
+      </div>
+
+      <button onClick={onClose} style={{
+        width:"100%",padding:"14px",borderRadius:14,fontSize:15,fontWeight:700,
+        background:"linear-gradient(135deg,#e91e8c,#7c3aed)",
+        backgroundSize:"200% 200%",animation:"shimmerText 4s ease infinite",
+        border:"none",color:"white",cursor:"pointer",
+        boxShadow:"0 8px 28px rgba(233,30,140,0.3)",
+        transition:"transform 0.2s",
+      }}
+        onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+        onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
+      >
+        View My Results →
+      </button>
+
+      <p style={{fontSize:11,color:"#d1d5db",marginTop:12}}>Auto-closing in a moment...</p>
+
+      {/* bottom shimmer bar */}
+      <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#7c3aed,#e91e8c,#7c3aed)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
+    </div>
+  </div>
+);
+
 const Result = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -344,14 +252,65 @@ const Result = () => {
   const [activeTab, setActiveTab]             = useState(0);
   const [showSuccess, setShowSuccess]         = useState(false);
   const [showGuestModal, setShowGuestModal]   = useState(false);
+  const [showCongrats, setShowCongrats]       = useState(false);
+  const [congratsOut, setCongratsOut]         = useState(false);
   const [filterState, setFilterState]         = useState("All States");
   const [filterLanguage, setFilterLanguage]   = useState("All Languages");
   const [filterGender, setFilterGender]       = useState("All Types");
-  const [showCongrats, setShowCongrats]       = useState(true);   // ← new
 
   useEffect(() => {
     const stored = localStorage.getItem("career_result");
-    if (stored) setData(JSON.parse(stored));
+    if (stored) {
+      setData(JSON.parse(stored));
+
+      // 🔊 Play celebration sound using Web Audio API (no file needed)
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const playNote = (freq, start, dur, vol = 0.3) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+          gain.gain.setValueAtTime(0, ctx.currentTime + start);
+          gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+          osc.start(ctx.currentTime + start);
+          osc.stop(ctx.currentTime + start + dur);
+        };
+        // Uplifting fanfare melody
+        playNote(523, 0.0,  0.18); // C5
+        playNote(659, 0.18, 0.18); // E5
+        playNote(784, 0.36, 0.18); // G5
+        playNote(1047,0.54, 0.35); // C6
+        playNote(880, 0.72, 0.18); // A5
+        playNote(1047,0.90, 0.45); // C6 long
+      } catch(e) { /* audio blocked, skip */ }
+
+      // 🎉 Show congratulations overlay
+      setShowCongrats(true);
+
+      // Auto-dismiss after 3.2s with exit animation
+      const dismissTimer = setTimeout(() => {
+        setCongratsOut(true);
+        setTimeout(() => setShowCongrats(false), 400);
+      }, 3200);
+
+      // 🎉 Confetti burst on load
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+
+      // 🎉 Continuous confetti for 2 seconds
+      const duration = 2000;
+      const end = Date.now() + duration;
+      const interval = setInterval(() => {
+        if (Date.now() > end) return clearInterval(interval);
+        confetti({ particleCount: 20, spread: 60, origin: { y: Math.random() - 0.2 } });
+      }, 250);
+
+      return () => { clearInterval(interval); clearTimeout(dismissTimer); };
+    }
   }, []);
 
   useEffect(() => {
@@ -396,24 +355,14 @@ const Result = () => {
   /* shared card style */
   const card = { background:"white", border:"1.5px solid #f3e8ff", borderRadius:24, padding:"32px 28px", boxShadow:"0 20px 60px rgba(124,58,237,0.08), 0 4px 16px rgba(0,0,0,0.04)" };
 
-  // Derive first name for personalised greeting
-  const firstName = user?.name?.split(" ")[0] || user?.first_name || "";
-
   return (
     <div style={{minHeight:"100vh",background:"#fafafa",position:"relative"}}>
       <style>{globalStyles}</style>
       <BgScene/>
 
-      {/* ── Congratulations overlay (shown once on load) ── */}
-      {showCongrats && (
-        <CongratsBurst
-          name={firstName}
-          onDone={() => setShowCongrats(false)}
-        />
-      )}
-
       {showGuestModal && <GuestLoginModal onClose={()=>setShowGuestModal(false)} onLogin={()=>navigate("/login",{state:{returnTo:"/result"}})} onSignup={()=>navigate("/signup",{state:{returnTo:"/result"}})}/>}
       {showSuccess    && <SuccessModal onClose={()=>setShowSuccess(false)} onDashboard={()=>navigate("/dashboard")}/>}
+      {showCongrats   && <CongratsOverlay closing={congratsOut} onClose={()=>{ setCongratsOut(true); setTimeout(()=>setShowCongrats(false),400); }}/>}
 
       <div style={{maxWidth:860,margin:"0 auto",padding:"40px 16px 60px",position:"relative",zIndex:1}}>
 
