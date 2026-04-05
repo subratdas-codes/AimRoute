@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import ScholarshipFinder from "../components/ScholarshipFinder";
-
 import ExamEligibilityChecker from "../components/ExamEligibilityChecker";
 
 const LEVEL_LABEL = {
@@ -125,7 +124,7 @@ function downloadPDF(result) {
   if (win) win.onload = () => { win.print(); URL.revokeObjectURL(url); };
 }
 
-// ── Download Menu (fixed position — avoids overflow-hidden clipping) ──
+// ── Download Menu ─────────────────────────────────────────────
 function DownloadMenu({ result }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos]   = useState({ top: 0, right: 0 });
@@ -196,6 +195,8 @@ function DownloadMenu({ result }) {
 }
 
 // ── Stat Card ─────────────────────────────────────────────────
+// FIX: Replaced Tailwind transition-all shorthand + inline style width
+// with explicit style properties to avoid animation shorthand conflict.
 function StatCard({ icon, label, value, sub, barColor, barPct }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -203,7 +204,15 @@ function StatCard({ icon, label, value, sub, barColor, barPct }) {
       <div className="text-2xl font-semibold text-gray-900 leading-tight truncate">{value}</div>
       <div className="text-xs text-gray-500 mt-0.5 mb-3">{label}</div>
       <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${barColor} transition-all duration-1000`} style={{width:`${barPct}%`}} />
+        <div
+          className={`h-full rounded-full ${barColor}`}
+          style={{
+            width: `${barPct}%`,
+            transitionProperty: "width",
+            transitionDuration: "1000ms",
+            transitionTimingFunction: "ease",
+          }}
+        />
       </div>
       {sub && <div className="text-xs text-gray-400 mt-1.5 truncate">{sub}</div>}
     </div>
@@ -227,7 +236,9 @@ function RoadmapPills({ level }) {
   );
 }
 
-// ── History Row — NO overflow-hidden on wrapper ───────────────
+// ── History Row ───────────────────────────────────────────────
+// FIX: Level breakdown bar also had transition-all + inline style width.
+// Same fix applied — explicit transitionProperty/Duration/TimingFunction.
 function HistoryRow({ result, index }) {
   const [open, setOpen] = useState(false);
   const cs = CAT_STYLE[result.dominant_category] || CAT_STYLE.general;
@@ -304,6 +315,28 @@ function HistoryRow({ result, index }) {
   );
 }
 
+// ── Loading Spinner ───────────────────────────────────────────
+// FIX: Replaced animate-spin (shorthand) + no animationDelay with
+// explicit style properties so React never mixes shorthand + longhand.
+function Spinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div
+          className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"
+          style={{
+            animationName:           "spin",
+            animationDuration:       "1s",
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+          }}
+        />
+        <p className="text-sm text-gray-500">Loading your dashboard...</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Dashboard ────────────────────────────────────────────
 export default function Dashboard() {
   const [data, setData]       = useState(null);
@@ -320,14 +353,7 @@ export default function Dashboard() {
       });
   }, [navigate]);
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm text-gray-500">Loading your dashboard...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Spinner />;
 
   if (error) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -374,10 +400,10 @@ export default function Dashboard() {
 
         {/* STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon="🎯" label="Total attempts" value={total} sub="career quizzes taken" barColor="bg-purple-500" barPct={Math.min(total*20,100)} />
-          <StatCard icon="🏆" label="Latest top match" value={latest?.top_career?.split(" ").slice(0,2).join(" ")||"—"} sub={latest?.top_career||"Take a quiz first"} barColor="bg-green-500" barPct={latest?85:0} />
-          <StatCard icon="📊" label="Last exam score" value={latest?`${latest.percentage}%`:"—"} sub="your most recent %" barColor="bg-amber-500" barPct={latest?.percentage||0} />
-          <StatCard icon={CAT_ICON[dominant]||"🎯"} label="Strongest interest" value={dominant||"—"} sub="across all attempts" barColor={cs.bar} barPct={dominant?90:0} />
+          <StatCard icon="🎯" label="Total attempts"    value={total}                                          sub="career quizzes taken"          barColor="bg-purple-500" barPct={Math.min(total*20,100)} />
+          <StatCard icon="🏆" label="Latest top match"  value={latest?.top_career?.split(" ").slice(0,2).join(" ")||"—"} sub={latest?.top_career||"Take a quiz first"} barColor="bg-green-500"  barPct={latest?85:0} />
+          <StatCard icon="📊" label="Last exam score"   value={latest?`${latest.percentage}%`:"—"}            sub="your most recent %"             barColor="bg-amber-500"  barPct={latest?.percentage||0} />
+          <StatCard icon={CAT_ICON[dominant]||"🎯"} label="Strongest interest" value={dominant||"—"}          sub="across all attempts"            barColor={cs.bar}        barPct={dominant?90:0} />
         </div>
 
         {/* LATEST + BREAKDOWN */}
@@ -418,13 +444,16 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {/* LEVEL BREAKDOWN */}
           <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="text-sm font-semibold text-gray-800 mb-1">Attempts by level</div>
             <div className="text-xs text-gray-400 mb-5">Quiz distribution</div>
             <div className="space-y-4">
               {["10th","12th","grad","pg"].map(lvl => {
-                const count = data.level_breakdown?.[lvl]||0;
-                const max   = Math.max(...Object.values(data.level_breakdown||{dummy:1}),1);
+                const count = data.level_breakdown?.[lvl] || 0;
+                const max   = Math.max(...Object.values(data.level_breakdown || { dummy: 1 }), 1);
+                const pct   = Math.round((count / max) * 100);
                 return (
                   <div key={lvl}>
                     <div className="flex justify-between items-center mb-1.5">
@@ -432,7 +461,16 @@ export default function Dashboard() {
                       <span className="text-xs font-semibold text-gray-800">{count}</span>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-purple-500 rounded-full transition-all duration-700" style={{width:`${Math.round((count/max)*100)}%`}} />
+                      {/* FIX: explicit transition properties instead of transition-all + inline width */}
+                      <div
+                        className="h-full bg-purple-500 rounded-full"
+                        style={{
+                          width:                   `${pct}%`,
+                          transitionProperty:      "width",
+                          transitionDuration:      "700ms",
+                          transitionTimingFunction:"ease",
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -468,8 +506,7 @@ export default function Dashboard() {
         {/* EXAM ELIGIBILITY CHECKER */}
         <ExamEligibilityChecker />
 
-
-        {/*  Scholarship CHECKER */}
+        {/* SCHOLARSHIP FINDER */}
         <ScholarshipFinder />
 
         {/* NEXT STEPS */}

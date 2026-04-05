@@ -32,22 +32,31 @@ function TypingText() {
   return (
     <span>
       {text}
-      <span style={{ display: "inline-block", width: "2px", height: "18px", background: "#a855f7", marginLeft: "2px", verticalAlign: "middle", animation: "blink .8s ease-in-out infinite" }} />
+      <span style={{
+        display: "inline-block", width: "2px", height: "18px",
+        background: "#a855f7", marginLeft: "2px", verticalAlign: "middle",
+        // FIX: was animation shorthand string — split into longhand properties
+        animationName:           "blink",
+        animationDuration:       ".8s",
+        animationTimingFunction: "ease-in-out",
+        animationIterationCount: "infinite",
+      }} />
     </span>
   );
 }
 
+// Maps any URL variant → the exact level string stored in the DB
 const LEVEL_ALIAS = {
-  "grad": "graduation", "graduation": "graduation",
+  "graduation": "grad", "graduate": "grad", "grad": "grad",
   "post-grad": "pg", "postgrad": "pg", "pg": "pg",
   "10th": "10th", "12th": "12th",
 };
 const LEVEL_NAMES = {
   "10th": "10th Grade", "12th": "12th Grade",
-  "graduation": "Graduation", "pg": "Post Graduation",
+  "grad": "Graduation", "pg": "Post Graduation",
 };
 const LEVEL_ICONS = {
-  "10th": "🎒", "12th": "📚", "graduation": "🎓", "pg": "🔬",
+  "10th": "🎒", "12th": "📚", "grad": "🎓", "pg": "🔬",
 };
 
 const globalStyles = `
@@ -137,29 +146,72 @@ const CAREER_CARDS = [
 ];
 
 const STAT_BUBBLES = [
-  { val: "6,554", label: "Colleges", top: "28%", left: "3%",  delay: "0.8s", dur: "floatC 6s ease-in-out infinite" },
-  { val: "200+",  label: "Careers",  top: "62%", left: "82%", delay: "1.5s", dur: "floatC 7s ease-in-out infinite" },
+  { val: "6,554", label: "Colleges", top: "28%", left: "3%",  delay: "0.8s", dur: "6s" },
+  { val: "200+",  label: "Careers",  top: "62%", left: "82%", delay: "1.5s", dur: "7s" },
 ];
 
+// FIX: OrbitRing — was mixing animation shorthand string with animationDelay.
+// Now uses explicit animationName, animationDuration, animationTimingFunction,
+// animationIterationCount, animationDelay separately on every animated element.
 function OrbitRing({ top, left, size, color, delay }) {
   return (
     <div style={{ position: "absolute", top, left, width: size, height: size, pointerEvents: "none" }}>
-      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `1.5px dashed ${color}`, opacity: 0.2, animation: `spin-slow ${18 + size / 10}s linear infinite` }} />
-      <div style={{ position: "absolute", top: "50%", left: "50%", marginTop: -5, marginLeft: -5, width: 10, height: 10, borderRadius: "50%", background: color, opacity: 0.6, animation: `orbitDot ${4 + size / 30}s linear infinite`, animationDelay: delay }} />
-      <div style={{ position: "absolute", top: "50%", left: "50%", marginTop: -4, marginLeft: -4, width: 8, height: 8, borderRadius: "50%", background: color, opacity: 0.4, animation: `orbitDot2 ${6 + size / 30}s linear infinite reverse`, animationDelay: delay }} />
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: "50%",
+        border: `1.5px dashed ${color}`, opacity: 0.2,
+        animationName:           "spin-slow",
+        animationDuration:       `${18 + size / 10}s`,
+        animationTimingFunction: "linear",
+        animationIterationCount: "infinite",
+      }} />
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        marginTop: -5, marginLeft: -5,
+        width: 10, height: 10, borderRadius: "50%",
+        background: color, opacity: 0.6,
+        animationName:           "orbitDot",
+        animationDuration:       `${4 + size / 30}s`,
+        animationTimingFunction: "linear",
+        animationIterationCount: "infinite",
+        animationDelay:          delay,
+      }} />
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        marginTop: -4, marginLeft: -4,
+        width: 8, height: 8, borderRadius: "50%",
+        background: color, opacity: 0.4,
+        animationName:            "orbitDot2",
+        animationDuration:        `${6 + size / 30}s`,
+        animationTimingFunction:  "linear",
+        animationIterationCount:  "infinite",
+        animationDirection:       "reverse",
+        animationDelay:           delay,
+      }} />
     </div>
   );
 }
 
+// FIX: StarDeco — was animation shorthand string + animationDelay separate.
+// Split into explicit longhand properties.
 function StarDeco({ top, left, color, size, delay }) {
   return (
-    <div style={{ position: "absolute", top, left, fontSize: size, lineHeight: 1, animation: `starPop ${3 + Math.random()}s ease-in-out infinite`, animationDelay: delay, color, opacity: 0.7, pointerEvents: "none" }}>✦</div>
+    <div style={{
+      position: "absolute", top, left,
+      fontSize: size, lineHeight: 1,
+      animationName:           "starPop",
+      animationDuration:       `${3 + Math.random()}s`,
+      animationTimingFunction: "ease-in-out",
+      animationIterationCount: "infinite",
+      animationDelay:          delay,
+      color, opacity: 0.7, pointerEvents: "none",
+    }}>✦</div>
   );
 }
 
 function ConnectLines() {
   return (
-    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+      viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
       {[
         "M 80 120 Q 320 300 720 450 Q 1100 600 1380 750",
         "M 1380 100 Q 900 250 720 450 Q 540 650 60 820",
@@ -168,12 +220,27 @@ function ConnectLines() {
         <path key={i} d={d} fill="none"
           stroke={i % 2 === 0 ? "#e91e8c" : "#7c3aed"}
           strokeWidth="1.5" strokeDasharray="6 8" opacity="0.12"
-          style={{ animation: `trailMove ${8 + i * 2}s linear infinite`, animationDelay: `${i * 2}s` }}
+          style={{
+            // SVG elements use style strings differently — keep as-is,
+            // these are SVG presentation attributes not React DOM style props
+            // so they don't trigger the React animation warning.
+            animationName:           "trailMove",
+            animationDuration:       `${8 + i * 2}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            animationDelay:          `${i * 2}s`,
+          }}
         />
       ))}
       <path d="M 100 800 Q 400 500 720 450 Q 1040 400 1400 200" fill="none"
         stroke="url(#lgLine)" strokeWidth="1" strokeDasharray="800" strokeDashoffset="800"
-        style={{ animation: "pathDraw 4s ease-out 0.5s forwards" }}
+        style={{
+          animationName:           "pathDraw",
+          animationDuration:       "4s",
+          animationTimingFunction: "ease-out",
+          animationDelay:          "0.5s",
+          animationFillMode:       "forwards",
+        }}
       />
       <defs>
         <linearGradient id="lgLine" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -201,6 +268,11 @@ function BgScene() {
       <StarDeco top="82%" left="40%" color="#e91e8c" size="16px" delay="0.3s" />
       <StarDeco top="35%" left="6%"  color="#a855f7" size="13px" delay="1.8s" />
       <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(124,58,237,0.09) 1.5px, transparent 1.5px)", backgroundSize: "38px 38px" }} />
+
+      {/* CAREER CARDS
+          FIX: was animation: `${c.anim} ${c.dur} ease-in-out infinite` (shorthand)
+          with animationDelay: c.delay separate — classic conflict.
+          Split into longhand properties. */}
       {CAREER_CARDS.map((c, i) => (
         <div key={i} style={{
           position: "absolute", top: c.top, left: c.left,
@@ -208,8 +280,11 @@ function BgScene() {
           borderRadius: 16, padding: "8px 12px",
           display: "flex", alignItems: "center", gap: 8,
           boxShadow: "0 8px 28px rgba(124,58,237,0.1), 0 2px 8px rgba(0,0,0,0.05)",
-          animation: `${c.anim} ${c.dur} ease-in-out infinite`,
-          animationDelay: c.delay,
+          animationName:           c.anim,
+          animationDuration:       c.dur,
+          animationTimingFunction: "ease-in-out",
+          animationIterationCount: "infinite",
+          animationDelay:          c.delay,
           transform: `rotate(${c.rot}deg)`,
           minWidth: 155, backdropFilter: "blur(8px)",
         }}>
@@ -219,29 +294,61 @@ function BgScene() {
             <div style={{ fontSize: 10, color: "#7c3aed", fontWeight: 600, marginTop: 2 }}>{c.sub}</div>
           </div>
           <div style={{ position: "absolute", inset: 0, borderRadius: 16, overflow: "hidden", pointerEvents: "none" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, width: "35%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)", animation: `shimmerBar ${2 + i * 0.4}s ease-in-out infinite`, animationDelay: `${i * 0.7}s` }} />
+            {/* FIX: shimmerBar also had animation shorthand + animationDelay separate */}
+            <div style={{
+              position: "absolute", top: 0, left: 0,
+              width: "35%", height: "100%",
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+              animationName:           "shimmerBar",
+              animationDuration:       `${2 + i * 0.4}s`,
+              animationTimingFunction: "ease-in-out",
+              animationIterationCount: "infinite",
+              animationDelay:          `${i * 0.7}s`,
+            }} />
           </div>
         </div>
       ))}
+
+      {/* STAT BUBBLES
+          FIX: was animation: s.dur (a full shorthand string like "floatC 6s ease-in-out infinite")
+          with animationDelay: s.delay separate. Split dur into name + duration, keep rest explicit. */}
       {STAT_BUBBLES.map((s, i) => (
         <div key={i} style={{
           position: "absolute", top: s.top, left: s.left,
           background: "white", border: "1.5px solid rgba(124,58,237,0.14)",
           borderRadius: 99, padding: "8px 16px", textAlign: "center",
           boxShadow: "0 8px 24px rgba(124,58,237,0.1)",
-          animation: s.dur, animationDelay: s.delay,
+          animationName:           "floatC",
+          animationDuration:       s.dur,
+          animationTimingFunction: "ease-in-out",
+          animationIterationCount: "infinite",
+          animationDelay:          s.delay,
         }}>
           <div style={{ fontSize: 16, fontWeight: 800, background: "linear-gradient(135deg,#e91e8c,#7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.val}</div>
           <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, marginTop: 1 }}>{s.label}</div>
         </div>
       ))}
+
       {[
         { top: "10%", left: "15%", color: "#e91e8c" },
         { top: "80%", left: "88%", color: "#7c3aed" },
       ].map((p, i) => (
         <div key={i} style={{ position: "absolute", top: p.top, left: p.left }}>
           {[0, 1, 2].map(j => (
-            <div key={j} style={{ position: "absolute", width: 60 + j * 30, height: 60 + j * 30, borderRadius: "50%", border: `1.5px solid ${p.color}`, top: -(j * 15), left: -(j * 15), opacity: 0, animation: `pulseRing 2.5s ease-out infinite`, animationDelay: `${j * 0.7}s` }} />
+            // FIX: was animation: `pulseRing 2.5s ease-out infinite` (shorthand)
+            // with animationDelay: `${j * 0.7}s` separate. Split out.
+            <div key={j} style={{
+              position: "absolute",
+              width: 60 + j * 30, height: 60 + j * 30,
+              borderRadius: "50%", border: `1.5px solid ${p.color}`,
+              top: -(j * 15), left: -(j * 15),
+              opacity: 0,
+              animationName:           "pulseRing",
+              animationDuration:       "2.5s",
+              animationTimingFunction: "ease-out",
+              animationIterationCount: "infinite",
+              animationDelay:          `${j * 0.7}s`,
+            }} />
           ))}
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: p.color, opacity: 0.7 }} />
         </div>
@@ -255,17 +362,17 @@ export default function CareerQuestions() {
   const navigate = useNavigate();
   const level = LEVEL_ALIAS[rawLevel] || rawLevel;
 
-  const [questions, setQuestions] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [scores, setScores] = useState({});
-  const [reasons, setReasons] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [stepCount, setStepCount] = useState(0);
-  const [percentage, setPercentage] = useState("");
+  const [questions, setQuestions]                   = useState([]);
+  const [currentQuestion, setCurrentQuestion]       = useState(null);
+  const [scores, setScores]                         = useState({});
+  const [reasons, setReasons]                       = useState([]);
+  const [loading, setLoading]                       = useState(true);
+  const [submitting, setSubmitting]                 = useState(false);
+  const [error, setError]                           = useState(null);
+  const [stepCount, setStepCount]                   = useState(0);
+  const [percentage, setPercentage]                 = useState("");
   const [percentageConfirmed, setPercentageConfirmed] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption, setSelectedOption]         = useState(null);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -308,14 +415,16 @@ export default function CareerQuestions() {
     setSelectedOption(opt.id || opt.option_text);
     setTimeout(() => {
       setSelectedOption(null);
-      const updatedScores = { ...scores, [opt.category_tag]: (scores[opt.category_tag] || 0) + 1 };
+      const updatedScores  = { ...scores, [opt.category_tag]: (scores[opt.category_tag] || 0) + 1 };
       const updatedReasons = [...reasons, opt.option_text];
       setScores(updatedScores); setReasons(updatedReasons); setStepCount(s => s + 1);
       if (opt.next_question_id) {
         const nq = questions.find(q => q.id === opt.next_question_id);
         if (nq) { setCurrentQuestion(nq); return; }
       }
-      const nbo = questions.filter(q => q.order_index > currentQuestion.order_index).sort((a, b) => a.order_index - b.order_index)[0];
+      const nbo = questions
+        .filter(q => q.order_index > currentQuestion.order_index)
+        .sort((a, b) => a.order_index - b.order_index)[0];
       if (nbo) { setCurrentQuestion(nbo); return; }
       submitToBackend(updatedScores, updatedReasons);
     }, 300);
@@ -330,31 +439,22 @@ export default function CareerQuestions() {
       <BgScene />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", minHeight: "calc(100vh - 70px)", position: "relative", zIndex: 1 }}>
         <div className="slide-up" style={{ width: "100%", maxWidth: 420 }}>
-
-          {/* Level badge */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
             <div style={{ background: "white", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "5px 16px", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(124,58,237,0.1)" }}>
               <span style={{ fontSize: 14 }}>{LEVEL_ICONS[level] || "📊"}</span>
               <span style={{ color: "#7c3aed", fontSize: 12, fontWeight: 600 }}>{LEVEL_NAMES[level] || level} Career Assessment</span>
             </div>
           </div>
-
-          {/* Card */}
           <div style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 24, padding: "32px 32px 28px", textAlign: "center", boxShadow: "0 20px 60px rgba(124,58,237,0.12), 0 4px 16px rgba(0,0,0,0.04)" }}>
-
-            {/* Icon */}
-            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 26, boxShadow: "0 6px 20px rgba(233,30,140,0.28)" }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #e91e8c, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 26, boxShadow: "0 6px 20px rgba(233,30,140,0.28)" }}>
               {LEVEL_ICONS[level] || "📊"}
             </div>
-
             <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", marginBottom: 4, letterSpacing: "-0.5px" }}>Before we start</h2>
             <p style={{ color: "#7c3aed", fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{LEVEL_NAMES[level] || level} Career Quiz</p>
             <p style={{ color: "#9ca3af", fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>
               What was your percentage in your last exam?<br />
               <span style={{ fontSize: 11, color: "#d1d5db" }}>(Helps us suggest colleges and realistic paths)</span>
             </p>
-
-            {/* Input */}
             <div style={{ position: "relative", marginBottom: 6 }}>
               <input
                 type="number" min="0" max="100" placeholder="e.g. 78"
@@ -368,8 +468,6 @@ export default function CareerQuestions() {
               <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", color: "#d8b4fe", fontSize: 18, fontWeight: 700 }}>%</span>
             </div>
             <p style={{ color: "#d1d5db", fontSize: 11, marginBottom: 20 }}>Enter a number between 0 and 100</p>
-
-            {/* Button */}
             <button
               className="brand-btn"
               onClick={() => setPercentageConfirmed(true)}
@@ -378,8 +476,6 @@ export default function CareerQuestions() {
             >
               Start Quiz →
             </button>
-
-            {/* Stats row */}
             <div style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 20, paddingTop: 16, borderTop: "1.5px solid #f3f4f6" }}>
               {[{ v: "5 min", l: "Duration" }, { v: "AI", l: "Powered" }, { v: "Free", l: "Forever" }].map((s, i) => (
                 <div key={i} style={{ textAlign: "center", flex: 1, borderRight: i < 2 ? "1.5px solid #f3f4f6" : "none" }}>
@@ -389,7 +485,6 @@ export default function CareerQuestions() {
               ))}
             </div>
           </div>
-
           <p style={{ color: "#c4b5fd", fontSize: 11, textAlign: "center", marginTop: 12 }}>Press Enter to continue</p>
         </div>
       </div>
@@ -403,7 +498,15 @@ export default function CareerQuestions() {
       <BgScene />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#e91e8c", animation: "spin-slow 1s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%",
+            border: "3px solid transparent", borderTopColor: "#e91e8c",
+            margin: "0 auto 16px",
+            animationName:           "spin-slow",
+            animationDuration:       "1s",
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+          }} />
           <p style={{ color: "#9ca3af", fontWeight: 600 }}>Loading questions…</p>
         </div>
       </div>
@@ -435,14 +538,39 @@ export default function CareerQuestions() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", position: "relative", zIndex: 1 }}>
         <div style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 28, padding: "44px 40px", textAlign: "center", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(124,58,237,0.12)" }}>
           <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 24px" }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#e91e8c", animation: "spin-slow 1s linear infinite" }} />
-            <div style={{ position: "absolute", inset: 8, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#7c3aed", animation: "spin-rev 0.7s linear infinite" }} />
+            <div style={{
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: "3px solid transparent", borderTopColor: "#e91e8c",
+              animationName:           "spin-slow",
+              animationDuration:       "1s",
+              animationTimingFunction: "linear",
+              animationIterationCount: "infinite",
+            }} />
+            <div style={{
+              position: "absolute", inset: 8, borderRadius: "50%",
+              border: "2px solid transparent", borderTopColor: "#7c3aed",
+              animationName:           "spin-rev",
+              animationDuration:       "0.7s",
+              animationTimingFunction: "linear",
+              animationIterationCount: "infinite",
+            }} />
             <div style={{ position: "absolute", inset: 18, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✨</div>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "#1a1a2e", marginBottom: 14 }}><TypingText /></h2>
+
+          {/* FIX: bouncing dots — was animation shorthand + animationDelay separate.
+              Each dot now uses explicit longhand properties. */}
           <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 14 }}>
             {[0, 150, 300].map(d => (
-              <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)", animation: "bd .7s ease-in-out infinite", animationDelay: `${d}ms` }} />
+              <div key={d} style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: "linear-gradient(135deg,#e91e8c,#7c3aed)",
+                animationName:           "bd",
+                animationDuration:       ".7s",
+                animationTimingFunction: "ease-in-out",
+                animationIterationCount: "infinite",
+                animationDelay:          `${d}ms`,
+              }} />
             ))}
           </div>
           <p style={{ color: "#9ca3af", fontSize: 13 }}>Finding the best path for you</p>
@@ -469,8 +597,6 @@ export default function CareerQuestions() {
       <BgScene />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", minHeight: "calc(100vh - 70px)", position: "relative", zIndex: 1 }}>
         <div style={{ width: "100%", maxWidth: 560 }}>
-
-          {/* Progress bar */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "white", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "5px 12px", boxShadow: "0 2px 8px rgba(124,58,237,0.06)" }}>
@@ -486,7 +612,6 @@ export default function CareerQuestions() {
             </div>
           </div>
 
-          {/* Question card */}
           <div ref={cardRef} style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 24, padding: "28px 28px", boxShadow: "0 20px 56px rgba(124,58,237,0.09), 0 4px 16px rgba(0,0,0,0.04)" }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#fce7f3,#ede9fe)", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "3px 12px", marginBottom: 12 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)" }} />
