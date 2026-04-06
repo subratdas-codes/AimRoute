@@ -43,7 +43,7 @@ def submit_assessment(
     db.add(assessment)
     db.flush()
 
-    category_scores: dict[str, int] = {}
+    domain_scores: dict[str, int] = {}
     for ans in payload.answers:
         question = db.get(AssessmentQuestion, ans.question_id)
         if question is None:
@@ -61,13 +61,13 @@ def submit_assessment(
             question_id=ans.question_id,
             answer_value=ans.answer_value,
         ))
-        category_scores[question.category] = (
-            category_scores.get(question.category, 0) + ans.answer_value
+        domain_scores[question.category] = (
+            domain_scores.get(question.category, 0) + ans.answer_value
         )
 
     # Map category totals → career domains (by matching domain name to category)
     matches: list[CareerMatchOut] = []
-    for category, score in category_scores.items():
+    for category, score in domain_scores.items():
         domain = db.query(CareerDomain).filter(CareerDomain.name == category).first()
         if domain:
             db.add(CareerMatch(
