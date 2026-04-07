@@ -1,7 +1,141 @@
 // frontend/src/pages/CareerQuestions.jsx
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import API from "../services/api";
+
+// ── Motivational messages ─────────────────────────────────────
+const GENERIC_MESSAGES = [
+  "You're doing great! 🌟",
+  "Keep going, you've got this! 💪",
+  "Love your honesty! ✨",
+  "One step closer to your path! 🚀",
+  "That's a thoughtful choice! 🧠",
+  "You're figuring it out! 🎯",
+  "Great instinct! 🔥",
+  "Stay true to yourself! 💫",
+  "Every answer brings clarity! 🌈",
+  "You're on the right track! ⭐",
+];
+
+const CATEGORY_MESSAGES = {
+  Technology: [
+    "A tech mind at work! 💻",
+    "Future developer detected! 🚀",
+    "Engineering vibes! ⚙️",
+    "You think like a builder! 🔧",
+    "The digital world needs you! 🌐",
+  ],
+  Healthcare: [
+    "A caring soul! 🩺",
+    "Future healer in the making! 💊",
+    "People are lucky to have you! 🏥",
+    "Empathy is your superpower! 💚",
+    "You were made to help! 🌿",
+  ],
+  Business: [
+    "Entrepreneur energy! 💼",
+    "Future leader spotted! 📈",
+    "You think big! 🏆",
+    "Business instincts on point! 💰",
+    "CEO mindset loading... 🎯",
+  ],
+  Creative: [
+    "Such a creative soul! 🎨",
+    "Art + heart = you! ✨",
+    "The world needs your vision! 🖌️",
+    "Design thinking activated! 🎭",
+    "Your creativity is a gift! 🌸",
+  ],
+  Science: [
+    "Scientific mind alert! 🔬",
+    "Future researcher vibes! 🧪",
+    "Curiosity is your strength! 🌌",
+    "You ask the right questions! 🔭",
+    "Science needs minds like yours! ⚗️",
+  ],
+  general: [
+    "Balanced and thoughtful! 🌟",
+    "A true all-rounder! 🎯",
+    "Smart and strategic! 🏅",
+    "Your path is unique! 🗺️",
+    "You see the big picture! 🌍",
+  ],
+};
+
+function pickMessage(dominantCategory, stepCount) {
+  const useCategoryMsg =
+    dominantCategory &&
+    CATEGORY_MESSAGES[dominantCategory] &&
+    Math.random() < 0.6;
+  const pool = useCategoryMsg
+    ? CATEGORY_MESSAGES[dominantCategory]
+    : GENERIC_MESSAGES;
+  const idx = (stepCount * 7 + Math.floor(Math.random() * pool.length)) % pool.length;
+  return pool[idx];
+}
+
+// ── Floating bubble ───────────────────────────────────────────
+function MotivationBubble({ message, targetRect, containerRect, visible }) {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (!targetRect || !containerRect || !visible) return;
+    const relativeTop  = targetRect.top  - containerRect.top  + targetRect.height / 2;
+    const relativeLeft = targetRect.right - containerRect.left + 12;
+    const bubbleWidth  = 200;
+    const fitsRight    = relativeLeft + bubbleWidth < containerRect.width;
+    setPos({
+      top:  relativeTop,
+      left: fitsRight
+        ? relativeLeft
+        : targetRect.left - containerRect.left - bubbleWidth - 12,
+    });
+  }, [targetRect, containerRect, visible]);
+
+  if (!visible || !message) return null;
+
+  return (
+    <div style={{
+      position:  "absolute",
+      top:       pos.top,
+      left:      pos.left,
+      transform: "translateY(-50%)",
+      zIndex:    50,
+      pointerEvents: "none",
+      animationName:           "bubblePop",
+      animationDuration:       "0.35s",
+      animationTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)",
+      animationFillMode:       "forwards",
+    }}>
+      <div style={{
+        background:   "linear-gradient(135deg, #7c3aed, #ec4899)",
+        color:        "white",
+        borderRadius: 99,
+        padding:      "7px 14px",
+        fontSize:     13,
+        fontWeight:   600,
+        whiteSpace:   "nowrap",
+        boxShadow:    "0 4px 20px rgba(124,58,237,0.35)",
+        fontFamily:   "'Sora', sans-serif",
+        position:     "relative",
+      }}>
+        {message}
+        {/* Tail pointing left toward the option */}
+        <span style={{
+          position:    "absolute",
+          left:        -7,
+          top:         "50%",
+          transform:   "translateY(-50%)",
+          width:       0,
+          height:      0,
+          borderTop:   "7px solid transparent",
+          borderBottom:"7px solid transparent",
+          borderRight: "8px solid #7c3aed",
+        }}/>
+      </div>
+    </div>
+  );
+}
 
 const TYPING_PHRASES = [
   "Analysing your answers",
@@ -35,7 +169,6 @@ function TypingText() {
       <span style={{
         display: "inline-block", width: "2px", height: "18px",
         background: "#a855f7", marginLeft: "2px", verticalAlign: "middle",
-        // FIX: was animation shorthand string — split into longhand properties
         animationName:           "blink",
         animationDuration:       ".8s",
         animationTimingFunction: "ease-in-out",
@@ -69,6 +202,7 @@ const globalStyles = `
   @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   @keyframes spin-rev { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
   @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  @keyframes bubblePop { from{opacity:0;transform:translateY(-50%) scale(0.6)} to{opacity:1;transform:translateY(-50%) scale(1)} }
   @keyframes floatA {
     0%   { transform: translateY(0px) translateX(0px) rotate(0deg); }
     25%  { transform: translateY(-22px) translateX(8px) rotate(5deg); }
@@ -150,98 +284,35 @@ const STAT_BUBBLES = [
   { val: "200+",  label: "Careers",  top: "62%", left: "82%", delay: "1.5s", dur: "7s" },
 ];
 
-// FIX: OrbitRing — was mixing animation shorthand string with animationDelay.
-// Now uses explicit animationName, animationDuration, animationTimingFunction,
-// animationIterationCount, animationDelay separately on every animated element.
 function OrbitRing({ top, left, size, color, delay }) {
   return (
     <div style={{ position: "absolute", top, left, width: size, height: size, pointerEvents: "none" }}>
-      <div style={{
-        position: "absolute", inset: 0, borderRadius: "50%",
-        border: `1.5px dashed ${color}`, opacity: 0.2,
-        animationName:           "spin-slow",
-        animationDuration:       `${18 + size / 10}s`,
-        animationTimingFunction: "linear",
-        animationIterationCount: "infinite",
-      }} />
-      <div style={{
-        position: "absolute", top: "50%", left: "50%",
-        marginTop: -5, marginLeft: -5,
-        width: 10, height: 10, borderRadius: "50%",
-        background: color, opacity: 0.6,
-        animationName:           "orbitDot",
-        animationDuration:       `${4 + size / 30}s`,
-        animationTimingFunction: "linear",
-        animationIterationCount: "infinite",
-        animationDelay:          delay,
-      }} />
-      <div style={{
-        position: "absolute", top: "50%", left: "50%",
-        marginTop: -4, marginLeft: -4,
-        width: 8, height: 8, borderRadius: "50%",
-        background: color, opacity: 0.4,
-        animationName:            "orbitDot2",
-        animationDuration:        `${6 + size / 30}s`,
-        animationTimingFunction:  "linear",
-        animationIterationCount:  "infinite",
-        animationDirection:       "reverse",
-        animationDelay:           delay,
-      }} />
+      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `1.5px dashed ${color}`, opacity: 0.2, animationName: "spin-slow", animationDuration: `${18 + size / 10}s`, animationTimingFunction: "linear", animationIterationCount: "infinite" }} />
+      <div style={{ position: "absolute", top: "50%", left: "50%", marginTop: -5, marginLeft: -5, width: 10, height: 10, borderRadius: "50%", background: color, opacity: 0.6, animationName: "orbitDot", animationDuration: `${4 + size / 30}s`, animationTimingFunction: "linear", animationIterationCount: "infinite", animationDelay: delay }} />
+      <div style={{ position: "absolute", top: "50%", left: "50%", marginTop: -4, marginLeft: -4, width: 8, height: 8, borderRadius: "50%", background: color, opacity: 0.4, animationName: "orbitDot2", animationDuration: `${6 + size / 30}s`, animationTimingFunction: "linear", animationIterationCount: "infinite", animationDirection: "reverse", animationDelay: delay }} />
     </div>
   );
 }
 
-// FIX: StarDeco — was animation shorthand string + animationDelay separate.
-// Split into explicit longhand properties.
 function StarDeco({ top, left, color, size, delay }) {
   return (
-    <div style={{
-      position: "absolute", top, left,
-      fontSize: size, lineHeight: 1,
-      animationName:           "starPop",
-      animationDuration:       `${3 + Math.random()}s`,
-      animationTimingFunction: "ease-in-out",
-      animationIterationCount: "infinite",
-      animationDelay:          delay,
-      color, opacity: 0.7, pointerEvents: "none",
-    }}>✦</div>
+    <div style={{ position: "absolute", top, left, fontSize: size, lineHeight: 1, animationName: "starPop", animationDuration: `${3 + Math.random()}s`, animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDelay: delay, color, opacity: 0.7, pointerEvents: "none" }}>✦</div>
   );
 }
 
 function ConnectLines() {
   return (
-    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
-      viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
       {[
         "M 80 120 Q 320 300 720 450 Q 1100 600 1380 750",
         "M 1380 100 Q 900 250 720 450 Q 540 650 60 820",
         "M 400 50 Q 600 250 720 450 Q 840 650 1100 850",
       ].map((d, i) => (
-        <path key={i} d={d} fill="none"
-          stroke={i % 2 === 0 ? "#e91e8c" : "#7c3aed"}
-          strokeWidth="1.5" strokeDasharray="6 8" opacity="0.12"
-          style={{
-            // SVG elements use style strings differently — keep as-is,
-            // these are SVG presentation attributes not React DOM style props
-            // so they don't trigger the React animation warning.
-            animationName:           "trailMove",
-            animationDuration:       `${8 + i * 2}s`,
-            animationTimingFunction: "linear",
-            animationIterationCount: "infinite",
-            animationDelay:          `${i * 2}s`,
-          }}
-        />
+        <path key={i} d={d} fill="none" stroke={i % 2 === 0 ? "#e91e8c" : "#7c3aed"} strokeWidth="1.5" strokeDasharray="6 8" opacity="0.12"
+          style={{ animationName: "trailMove", animationDuration: `${8 + i * 2}s`, animationTimingFunction: "linear", animationIterationCount: "infinite", animationDelay: `${i * 2}s` }} />
       ))}
-      <path d="M 100 800 Q 400 500 720 450 Q 1040 400 1400 200" fill="none"
-        stroke="url(#lgLine)" strokeWidth="1" strokeDasharray="800" strokeDashoffset="800"
-        style={{
-          animationName:           "pathDraw",
-          animationDuration:       "4s",
-          animationTimingFunction: "ease-out",
-          animationDelay:          "0.5s",
-          animationFillMode:       "forwards",
-        }}
-      />
+      <path d="M 100 800 Q 400 500 720 450 Q 1040 400 1400 200" fill="none" stroke="url(#lgLine)" strokeWidth="1" strokeDasharray="800" strokeDashoffset="800"
+        style={{ animationName: "pathDraw", animationDuration: "4s", animationTimingFunction: "ease-out", animationDelay: "0.5s", animationFillMode: "forwards" }} />
       <defs>
         <linearGradient id="lgLine" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#e91e8c" stopOpacity="0.6" />
@@ -268,87 +339,28 @@ function BgScene() {
       <StarDeco top="82%" left="40%" color="#e91e8c" size="16px" delay="0.3s" />
       <StarDeco top="35%" left="6%"  color="#a855f7" size="13px" delay="1.8s" />
       <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle, rgba(124,58,237,0.09) 1.5px, transparent 1.5px)", backgroundSize: "38px 38px" }} />
-
-      {/* CAREER CARDS
-          FIX: was animation: `${c.anim} ${c.dur} ease-in-out infinite` (shorthand)
-          with animationDelay: c.delay separate — classic conflict.
-          Split into longhand properties. */}
       {CAREER_CARDS.map((c, i) => (
-        <div key={i} style={{
-          position: "absolute", top: c.top, left: c.left,
-          background: "white", border: "1.5px solid rgba(233,30,140,0.12)",
-          borderRadius: 16, padding: "8px 12px",
-          display: "flex", alignItems: "center", gap: 8,
-          boxShadow: "0 8px 28px rgba(124,58,237,0.1), 0 2px 8px rgba(0,0,0,0.05)",
-          animationName:           c.anim,
-          animationDuration:       c.dur,
-          animationTimingFunction: "ease-in-out",
-          animationIterationCount: "infinite",
-          animationDelay:          c.delay,
-          transform: `rotate(${c.rot}deg)`,
-          minWidth: 155, backdropFilter: "blur(8px)",
-        }}>
+        <div key={i} style={{ position: "absolute", top: c.top, left: c.left, background: "white", border: "1.5px solid rgba(233,30,140,0.12)", borderRadius: 16, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 8px 28px rgba(124,58,237,0.1), 0 2px 8px rgba(0,0,0,0.05)", animationName: c.anim, animationDuration: c.dur, animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDelay: c.delay, transform: `rotate(${c.rot}deg)`, minWidth: 155, backdropFilter: "blur(8px)" }}>
           <div style={{ fontSize: 20, lineHeight: 1 }}>{c.icon}</div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#1a1a2e", lineHeight: 1.2 }}>{c.label}</div>
             <div style={{ fontSize: 10, color: "#7c3aed", fontWeight: 600, marginTop: 2 }}>{c.sub}</div>
           </div>
           <div style={{ position: "absolute", inset: 0, borderRadius: 16, overflow: "hidden", pointerEvents: "none" }}>
-            {/* FIX: shimmerBar also had animation shorthand + animationDelay separate */}
-            <div style={{
-              position: "absolute", top: 0, left: 0,
-              width: "35%", height: "100%",
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
-              animationName:           "shimmerBar",
-              animationDuration:       `${2 + i * 0.4}s`,
-              animationTimingFunction: "ease-in-out",
-              animationIterationCount: "infinite",
-              animationDelay:          `${i * 0.7}s`,
-            }} />
+            <div style={{ position: "absolute", top: 0, left: 0, width: "35%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)", animationName: "shimmerBar", animationDuration: `${2 + i * 0.4}s`, animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDelay: `${i * 0.7}s` }} />
           </div>
         </div>
       ))}
-
-      {/* STAT BUBBLES
-          FIX: was animation: s.dur (a full shorthand string like "floatC 6s ease-in-out infinite")
-          with animationDelay: s.delay separate. Split dur into name + duration, keep rest explicit. */}
       {STAT_BUBBLES.map((s, i) => (
-        <div key={i} style={{
-          position: "absolute", top: s.top, left: s.left,
-          background: "white", border: "1.5px solid rgba(124,58,237,0.14)",
-          borderRadius: 99, padding: "8px 16px", textAlign: "center",
-          boxShadow: "0 8px 24px rgba(124,58,237,0.1)",
-          animationName:           "floatC",
-          animationDuration:       s.dur,
-          animationTimingFunction: "ease-in-out",
-          animationIterationCount: "infinite",
-          animationDelay:          s.delay,
-        }}>
+        <div key={i} style={{ position: "absolute", top: s.top, left: s.left, background: "white", border: "1.5px solid rgba(124,58,237,0.14)", borderRadius: 99, padding: "8px 16px", textAlign: "center", boxShadow: "0 8px 24px rgba(124,58,237,0.1)", animationName: "floatC", animationDuration: s.dur, animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDelay: s.delay }}>
           <div style={{ fontSize: 16, fontWeight: 800, background: "linear-gradient(135deg,#e91e8c,#7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.val}</div>
           <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600, marginTop: 1 }}>{s.label}</div>
         </div>
       ))}
-
-      {[
-        { top: "10%", left: "15%", color: "#e91e8c" },
-        { top: "80%", left: "88%", color: "#7c3aed" },
-      ].map((p, i) => (
+      {[{ top: "10%", left: "15%", color: "#e91e8c" }, { top: "80%", left: "88%", color: "#7c3aed" }].map((p, i) => (
         <div key={i} style={{ position: "absolute", top: p.top, left: p.left }}>
           {[0, 1, 2].map(j => (
-            // FIX: was animation: `pulseRing 2.5s ease-out infinite` (shorthand)
-            // with animationDelay: `${j * 0.7}s` separate. Split out.
-            <div key={j} style={{
-              position: "absolute",
-              width: 60 + j * 30, height: 60 + j * 30,
-              borderRadius: "50%", border: `1.5px solid ${p.color}`,
-              top: -(j * 15), left: -(j * 15),
-              opacity: 0,
-              animationName:           "pulseRing",
-              animationDuration:       "2.5s",
-              animationTimingFunction: "ease-out",
-              animationIterationCount: "infinite",
-              animationDelay:          `${j * 0.7}s`,
-            }} />
+            <div key={j} style={{ position: "absolute", width: 60 + j * 30, height: 60 + j * 30, borderRadius: "50%", border: `1.5px solid ${p.color}`, top: -(j * 15), left: -(j * 15), opacity: 0, animationName: "pulseRing", animationDuration: "2.5s", animationTimingFunction: "ease-out", animationIterationCount: "infinite", animationDelay: `${j * 0.7}s` }} />
           ))}
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: p.color, opacity: 0.7 }} />
         </div>
@@ -362,18 +374,27 @@ export default function CareerQuestions() {
   const navigate = useNavigate();
   const level = LEVEL_ALIAS[rawLevel] || rawLevel;
 
-  const [questions, setQuestions]                   = useState([]);
-  const [currentQuestion, setCurrentQuestion]       = useState(null);
-  const [scores, setScores]                         = useState({});
-  const [reasons, setReasons]                       = useState([]);
-  const [loading, setLoading]                       = useState(true);
-  const [submitting, setSubmitting]                 = useState(false);
-  const [error, setError]                           = useState(null);
-  const [stepCount, setStepCount]                   = useState(0);
-  const [percentage, setPercentage]                 = useState("");
+  const [questions, setQuestions]                     = useState([]);
+  const [currentQuestion, setCurrentQuestion]         = useState(null);
+  const [scores, setScores]                           = useState({});
+  const [reasons, setReasons]                         = useState([]);
+  const [loading, setLoading]                         = useState(true);
+  const [submitting, setSubmitting]                   = useState(false);
+  const [error, setError]                             = useState(null);
+  const [stepCount, setStepCount]                     = useState(0);
+  const [percentage, setPercentage]                   = useState("");
   const [percentageConfirmed, setPercentageConfirmed] = useState(false);
-  const [selectedOption, setSelectedOption]         = useState(null);
-  const cardRef = useRef(null);
+  const [selectedOption, setSelectedOption]           = useState(null);
+
+  // ── Bubble state ──────────────────────────────────────────────
+  const [bubble, setBubble]   = useState({ visible: false, message: "", targetRect: null, containerRect: null });
+  const cardRef               = useRef(null);
+  const bubbleTimer           = useRef(null);
+
+  // Derive dominant category live from scores
+  const dominantCategory = Object.keys(scores).length > 0
+    ? Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]
+    : null;
 
   useEffect(() => {
     API.get(`/quiz/?level=${level}`)
@@ -394,6 +415,21 @@ export default function CareerQuestions() {
     requestAnimationFrame(() => { el.style.opacity = "1"; el.style.transform = "translateY(0)"; });
   }, [currentQuestion]);
 
+  // Clean up bubble timer on unmount
+  useEffect(() => () => clearTimeout(bubbleTimer.current), []);
+
+  const showBubble = useCallback((optionEl, category) => {
+    if (!cardRef.current || !optionEl) return;
+    const targetRect    = optionEl.getBoundingClientRect();
+    const containerRect = cardRef.current.getBoundingClientRect();
+    const message       = pickMessage(category || dominantCategory, stepCount);
+    clearTimeout(bubbleTimer.current);
+    setBubble({ visible: true, message, targetRect, containerRect });
+    bubbleTimer.current = setTimeout(() => {
+      setBubble(prev => ({ ...prev, visible: false }));
+    }, 1400);
+  }, [dominantCategory, stepCount]);
+
   const submitToBackend = async (finalScores, finalReasons) => {
     setSubmitting(true);
     try {
@@ -411,28 +447,44 @@ export default function CareerQuestions() {
     }
   };
 
-  const handleAnswer = (opt) => {
+  const handleAnswer = (opt, optionEl) => {
     setSelectedOption(opt.id || opt.option_text);
+
+    // Show bubble immediately on click
+    showBubble(optionEl, opt.category_tag);
+
     setTimeout(() => {
       setSelectedOption(null);
-      const updatedScores  = { ...scores, [opt.category_tag]: (scores[opt.category_tag] || 0) + 1 };
+      setBubble(prev => ({ ...prev, visible: false }));
+
+      const updatedScores = { ...scores };
+      const gateCategories = ["high_score", "mid_score", "avg_score", "low_score", "direct", "general"];
+      if (!gateCategories.includes(opt.category_tag)) {
+        updatedScores[opt.category_tag] = (scores[opt.category_tag] || 0) + 1;
+      }
+
       const updatedReasons = [...reasons, opt.option_text];
-      setScores(updatedScores); setReasons(updatedReasons); setStepCount(s => s + 1);
+      setScores(updatedScores);
+      setReasons(updatedReasons);
+      setStepCount(s => s + 1);
+
       if (opt.next_question_id) {
         const nq = questions.find(q => q.id === opt.next_question_id);
         if (nq) { setCurrentQuestion(nq); return; }
       }
+
       const nbo = questions
         .filter(q => q.order_index > currentQuestion.order_index)
         .sort((a, b) => a.order_index - b.order_index)[0];
       if (nbo) { setCurrentQuestion(nbo); return; }
+
       submitToBackend(updatedScores, updatedReasons);
     }, 300);
   };
 
   const pageWrap = { minHeight: "100vh", background: "#fafafa", position: "relative" };
 
-  // ── PERCENTAGE GATE ──────────────────────────────────────────────────────
+  // ── PERCENTAGE GATE ───────────────────────────────────────────
   if (!loading && !percentageConfirmed) return (
     <div style={pageWrap}>
       <style>{globalStyles}</style>
@@ -468,12 +520,9 @@ export default function CareerQuestions() {
               <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", color: "#d8b4fe", fontSize: 18, fontWeight: 700 }}>%</span>
             </div>
             <p style={{ color: "#d1d5db", fontSize: 11, marginBottom: 20 }}>Enter a number between 0 and 100</p>
-            <button
-              className="brand-btn"
-              onClick={() => setPercentageConfirmed(true)}
+            <button className="brand-btn" onClick={() => setPercentageConfirmed(true)}
               disabled={!percentage || percentage < 0 || percentage > 100}
-              style={{ width: "100%", border: "none", borderRadius: 12, padding: "14px 24px", color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
-            >
+              style={{ width: "100%", border: "none", borderRadius: 12, padding: "14px 24px", color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
               Start Quiz →
             </button>
             <div style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 20, paddingTop: 16, borderTop: "1.5px solid #f3f4f6" }}>
@@ -491,29 +540,21 @@ export default function CareerQuestions() {
     </div>
   );
 
-  // ── LOADING ──────────────────────────────────────────────────────────────
+  // ── LOADING ───────────────────────────────────────────────────
   if (loading) return (
     <div style={pageWrap}>
       <style>{globalStyles}</style>
       <BgScene />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: "50%",
-            border: "3px solid transparent", borderTopColor: "#e91e8c",
-            margin: "0 auto 16px",
-            animationName:           "spin-slow",
-            animationDuration:       "1s",
-            animationTimingFunction: "linear",
-            animationIterationCount: "infinite",
-          }} />
+          <div style={{ width: 48, height: 48, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#e91e8c", margin: "0 auto 16px", animationName: "spin-slow", animationDuration: "1s", animationTimingFunction: "linear", animationIterationCount: "infinite" }} />
           <p style={{ color: "#9ca3af", fontWeight: 600 }}>Loading questions…</p>
         </div>
       </div>
     </div>
   );
 
-  // ── ERROR ────────────────────────────────────────────────────────────────
+  // ── ERROR ─────────────────────────────────────────────────────
   if (error) return (
     <div style={pageWrap}>
       <style>{globalStyles}</style>
@@ -530,7 +571,7 @@ export default function CareerQuestions() {
     </div>
   );
 
-  // ── SUBMITTING ───────────────────────────────────────────────────────────
+  // ── SUBMITTING ────────────────────────────────────────────────
   if (submitting) return (
     <div style={pageWrap}>
       <style>{globalStyles}</style>
@@ -538,39 +579,14 @@ export default function CareerQuestions() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 80px)", position: "relative", zIndex: 1 }}>
         <div style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 28, padding: "44px 40px", textAlign: "center", maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(124,58,237,0.12)" }}>
           <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 24px" }}>
-            <div style={{
-              position: "absolute", inset: 0, borderRadius: "50%",
-              border: "3px solid transparent", borderTopColor: "#e91e8c",
-              animationName:           "spin-slow",
-              animationDuration:       "1s",
-              animationTimingFunction: "linear",
-              animationIterationCount: "infinite",
-            }} />
-            <div style={{
-              position: "absolute", inset: 8, borderRadius: "50%",
-              border: "2px solid transparent", borderTopColor: "#7c3aed",
-              animationName:           "spin-rev",
-              animationDuration:       "0.7s",
-              animationTimingFunction: "linear",
-              animationIterationCount: "infinite",
-            }} />
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "3px solid transparent", borderTopColor: "#e91e8c", animationName: "spin-slow", animationDuration: "1s", animationTimingFunction: "linear", animationIterationCount: "infinite" }} />
+            <div style={{ position: "absolute", inset: 8, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#7c3aed", animationName: "spin-rev", animationDuration: "0.7s", animationTimingFunction: "linear", animationIterationCount: "infinite" }} />
             <div style={{ position: "absolute", inset: 18, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✨</div>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: "#1a1a2e", marginBottom: 14 }}><TypingText /></h2>
-
-          {/* FIX: bouncing dots — was animation shorthand + animationDelay separate.
-              Each dot now uses explicit longhand properties. */}
           <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 14 }}>
             {[0, 150, 300].map(d => (
-              <div key={d} style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: "linear-gradient(135deg,#e91e8c,#7c3aed)",
-                animationName:           "bd",
-                animationDuration:       ".7s",
-                animationTimingFunction: "ease-in-out",
-                animationIterationCount: "infinite",
-                animationDelay:          `${d}ms`,
-              }} />
+              <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)", animationName: "bd", animationDuration: ".7s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", animationDelay: `${d}ms` }} />
             ))}
           </div>
           <p style={{ color: "#9ca3af", fontSize: 13 }}>Finding the best path for you</p>
@@ -588,7 +604,7 @@ export default function CareerQuestions() {
     </div>
   );
 
-  // ── QUIZ ─────────────────────────────────────────────────────────────────
+  // ── QUIZ ──────────────────────────────────────────────────────
   const progress = Math.min((stepCount / 9) * 100, 100);
 
   return (
@@ -612,7 +628,17 @@ export default function CareerQuestions() {
             </div>
           </div>
 
-          <div ref={cardRef} style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 24, padding: "28px 28px", boxShadow: "0 20px 56px rgba(124,58,237,0.09), 0 4px 16px rgba(0,0,0,0.04)" }}>
+          {/* Question card — position:relative so bubble positions correctly inside */}
+          <div ref={cardRef} style={{ background: "white", border: "1.5px solid #f3e8ff", borderRadius: 24, padding: "28px 28px", boxShadow: "0 20px 56px rgba(124,58,237,0.09), 0 4px 16px rgba(0,0,0,0.04)", position: "relative" }}>
+
+            {/* Motivation bubble rendered inside card */}
+            <MotivationBubble
+              message={bubble.message}
+              targetRect={bubble.targetRect}
+              containerRect={bubble.containerRect}
+              visible={bubble.visible}
+            />
+
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#fce7f3,#ede9fe)", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "3px 12px", marginBottom: 12 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)" }} />
               <span style={{ color: "#7c3aed", fontSize: 10, fontWeight: 700, letterSpacing: "0.5px" }}>QUESTION {stepCount + 1}</span>
@@ -627,7 +653,8 @@ export default function CareerQuestions() {
               {(currentQuestion.options || []).map((opt, i) => {
                 const isSelected = selectedOption === (opt.id || opt.option_text);
                 return (
-                  <button key={i} className="opt opt-btn" onClick={() => handleAnswer(opt)}
+                  <button key={i} className="opt opt-btn"
+                    onClick={e => handleAnswer(opt, e.currentTarget)}
                     style={{ width: "100%", textAlign: "left", background: isSelected ? "linear-gradient(135deg,#fce7f3,#ede9fe)" : "#fafafa", border: isSelected ? "1.5px solid #c084fc" : "1.5px solid #f3f4f6", borderRadius: 12, padding: "12px 16px", color: isSelected ? "#7c3aed" : "#4b5563", fontSize: 13, fontWeight: isSelected ? 600 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
                     onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = "#fdf4ff"; e.currentTarget.style.borderColor = "#e9d5ff"; e.currentTarget.style.color = "#1a1a2e"; } }}
                     onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = "#fafafa"; e.currentTarget.style.borderColor = "#f3f4f6"; e.currentTarget.style.color = "#4b5563"; } }}
