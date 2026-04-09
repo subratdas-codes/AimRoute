@@ -1,6 +1,3 @@
-# career_pools.py
-# Place this file at: backend/app/utils/career_pools.py
-
 CAREER_POOLS = {
     "10th": {
         "Technology": [

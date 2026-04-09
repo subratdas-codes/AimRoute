@@ -1,5 +1,3 @@
-# backend/app/utils/email_handler.py
-
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 

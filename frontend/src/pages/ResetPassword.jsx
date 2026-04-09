@@ -1,5 +1,3 @@
-// frontend/src/pages/ResetPassword.jsx
-
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import API from "../services/api";

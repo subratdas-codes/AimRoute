@@ -1,4 +1,3 @@
-// frontend/src/pages/CareerQuestions.jsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import API from "../services/api";

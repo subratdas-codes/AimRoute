@@ -1,5 +1,3 @@
-// frontend/src/pages/CareerPath.jsx
-
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
 

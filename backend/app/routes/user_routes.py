@@ -1,8 +1,3 @@
-# backend/app/routes/user_routes.py
-# Two new endpoints added:
-#   POST /users/verify-password  — re-auth gate for settings page
-#   DELETE /users/me             — permanently deletes the account
-
 from fastapi              import APIRouter, Depends, HTTPException
 from sqlalchemy.orm       import Session
 from pydantic             import BaseModel

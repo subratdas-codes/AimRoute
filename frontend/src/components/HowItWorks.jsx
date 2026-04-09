@@ -1,5 +1,3 @@
-// frontend/src/components/HowItWorks.jsx
-
 import { useEffect, useRef } from "react";
 
 const STEPS = [

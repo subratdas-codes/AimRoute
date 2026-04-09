@@ -1,10 +1,3 @@
-# backend/app/routes/career_routes.py
-# Place at: backend/app/routes/career_routes.py
-#
-# Register in main.py:
-#   from app.routes.career_routes import router as career_router
-#   app.include_router(career_router)
-
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.utils.career_pools import CAREER_POOLS, SALARY_RANGES, ROADMAP_STEPS

@@ -1,6 +1,3 @@
-# backend/app/routes/dashboard_routes.py
-# Replace your existing dashboard_routes.py with this
-
 import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

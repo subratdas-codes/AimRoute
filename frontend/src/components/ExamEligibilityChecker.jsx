@@ -1,7 +1,3 @@
-// frontend/src/components/ExamEligibilityChecker.jsx
-// Drop this component anywhere inside Dashboard.jsx
-// Usage: <ExamEligibilityChecker />
-
 import { useState, useMemo, useEffect } from "react";
 
 // ── Static Exam Data ──────────────────────────────────────────

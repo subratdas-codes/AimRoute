@@ -1,7 +1,3 @@
-// frontend/src/services/scholarshipService.js
-// Pure filter + sort logic — no API calls, no axios.
-// Import scholarships.json directly (Vite supports JSON imports out of the box).
-
 import SCHOLARSHIPS from "../../../mlmodel/scholarships.json";
 
 // ── Constants ─────────────────────────────────────────────────
@@ -38,19 +34,7 @@ export const QUIZ_LEVEL_MAP = {
   "pg":   "pg",
 };
 
-// ── Main filter function ───────────────────────────────────────
-//
-// All 4 filters are AND gates.
-// A field containing ["All"] means that scholarship is open to everyone
-// for that dimension — it passes every filter value automatically.
-//
-// Params:
-//   level         "12th" | "grad" | "pg"
-//   category      "All" | "General" | "OBC" | "SC" | "ST" | "EWS"
-//   career        "All" | "Technology" | "Healthcare" | "Business" | "Creative" | "Science"
-//   incomeLpa     number | "" (empty string = skip income filter)
-//
-// Returns: filtered + sorted array of scholarship objects
+
 
 export function filterScholarships({ level, category, career, incomeLpa }) {
   if (!level) return [];

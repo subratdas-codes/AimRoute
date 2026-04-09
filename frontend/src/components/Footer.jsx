@@ -1,6 +1,3 @@
-// frontend/src/components/Footer.jsx
-// Replace your existing Footer.jsx with this completely
-
 import { useNavigate } from "react-router-dom";
 
 const SOCIAL_LINKS = [

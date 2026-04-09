@@ -1,5 +1,3 @@
-# backend/app/utils/college_engine.py
-
 import pandas as pd
 import os
 

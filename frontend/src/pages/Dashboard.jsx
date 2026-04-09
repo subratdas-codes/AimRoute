@@ -1,5 +1,3 @@
-// frontend/src/pages/Dashboard.jsx
-
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";

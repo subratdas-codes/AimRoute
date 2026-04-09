@@ -1,5 +1,3 @@
-# backend/app/routes/result_routes.py
-
 import json
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session

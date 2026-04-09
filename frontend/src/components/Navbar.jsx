@@ -1,5 +1,3 @@
-// frontend/src/components/Navbar.jsx
-
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";

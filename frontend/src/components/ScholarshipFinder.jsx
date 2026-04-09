@@ -1,9 +1,3 @@
-// frontend/src/components/ScholarshipFinder.jsx
-//
-// Usage inside Dashboard.jsx — drop after the college suggestion section:
-//   import ScholarshipFinder from "../components/ScholarshipFinder";
-//   <ScholarshipFinder />
-
 import { useState, useMemo, useEffect } from "react";
 import {
   filterScholarships,
