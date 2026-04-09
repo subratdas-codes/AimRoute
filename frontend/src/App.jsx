@@ -19,6 +19,7 @@ import Settings        from "./pages/Settings";
 
 import AdminPanel      from "./pages/AdminPanel";
 import AdminLogin      from "./pages/AdminLogin";
+import Compare from "./pages/Compare";
 
 const ADMIN_ROUTES = ["/admin", "/admin-login"];
 
@@ -48,6 +49,7 @@ function App() {
         <Route path="/roadmap"            element={<Roadmap />} />
         <Route path="/quiz"               element={<Quiz />} />
         <Route path="/reset-password"     element={<ResetPassword />} />
+        <Route path="/compare" element={<Compare />} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

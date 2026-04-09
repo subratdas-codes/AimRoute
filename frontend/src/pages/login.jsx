@@ -130,7 +130,8 @@ function Login() {
       const { access_token, name } = res.data;
       localStorage.setItem("token", access_token);
       login({ name, email: formData.email });
-      navigate("/");
+      const hasResult = localStorage.getItem("career_result");
+        navigate(hasResult ? "/result" : "/");
     } catch (err) {
       const msg = err.response?.data?.detail;
       if      (msg === "User not found")    setError("No account found with this email.");

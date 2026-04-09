@@ -18,9 +18,11 @@ from app.routes import dashboard_routes
 from app.routes import college_routes
 from app.routes.chat_routes import router as chat_router
 
-from app.predict import router as ml_router # ← FIXED path
-from app.routes.admin_routes import router as admin_router  #Admin pannel
+from app.predict import router as ml_router
+from app.routes.admin_routes import router as admin_router
+from app.routes.career_routes import router as career_router
 
+# ── App must be created BEFORE any include_router calls ──────
 app = FastAPI(
     title="AimRoute AI Career API",
     version="1.0.0"
@@ -36,6 +38,7 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+# ── Register all routers ──────────────────────────────────────
 app.include_router(auth_routes.router,      prefix="/auth",  tags=["Auth"])
 app.include_router(login_routes.router,     prefix="/auth",  tags=["Login"])
 app.include_router(user_routes.router,      prefix="/users", tags=["User"])
@@ -43,9 +46,10 @@ app.include_router(quiz_routes.router,      prefix="/quiz",  tags=["Quiz"])
 app.include_router(result_routes.router,                     tags=["Results"])
 app.include_router(dashboard_routes.router,                  tags=["Dashboard"])
 app.include_router(college_routes.router,                    tags=["Colleges"])
-app.include_router(chat_router,                              tags=["Chat"])   # ← ADDED
+app.include_router(chat_router,                              tags=["Chat"])
 app.include_router(ml_router,               prefix="/ml",    tags=["ML"])
 app.include_router(admin_router)
+app.include_router(career_router)
 
 @app.get("/")
 def home():
