@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import bgImage from "../assets/login-bg.jpg";
 
-// ── Reusable eye toggle icon ──────────────────────────────────
 function EyeIcon({ show, onToggle }) {
   return (
     <button type="button" onClick={onToggle}
@@ -23,7 +22,6 @@ function EyeIcon({ show, onToggle }) {
   );
 }
 
-// ── Forgot Password modal ─────────────────────────────────────
 function ForgotPasswordModal({ onClose }) {
   const [email,   setEmail]   = useState("");
   const [message, setMessage] = useState("");
@@ -45,52 +43,32 @@ function ForgotPasswordModal({ onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8"
-        onClick={e => e.stopPropagation()}
-      >
+      onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8"
+        onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-gray-800 mb-1">Forgot password?</h3>
         <p className="text-sm text-gray-500 mb-5">
           Enter your email and we'll send a reset link.
         </p>
-
         {message && (
-          <p className="text-green-700 text-sm mb-4 bg-green-50 px-3 py-2 rounded-lg">
-            {message}
-          </p>
+          <p className="text-green-700 text-sm mb-4 bg-green-50 px-3 py-2 rounded-lg">{message}</p>
         )}
         {error && (
-          <p className="text-red-600 text-sm mb-4 bg-red-50 px-3 py-2 rounded-lg">
-            {error}
-          </p>
+          <p className="text-red-600 text-sm mb-4 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
         )}
-
         <form onSubmit={handleSend} className="space-y-4">
-          <input
-            type="email"
-            placeholder="your@email.com"
-            value={email}
+          <input type="email" placeholder="your@email.com" value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition disabled:opacity-60"
-          >
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+          <button type="submit" disabled={loading}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition disabled:opacity-60">
             {loading ? "Sending..." : "Send reset link"}
           </button>
         </form>
-
-        <button
-          onClick={onClose}
-          className="w-full mt-3 text-sm text-gray-400 hover:text-gray-600 transition"
-        >
+        <button onClick={onClose}
+          className="w-full mt-3 text-sm text-gray-400 hover:text-gray-600 transition">
           Cancel
         </button>
       </div>
@@ -98,19 +76,30 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
-// ── Login page ────────────────────────────────────────────────
 function Login() {
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const { login }  = useAuth();
+  const navigate   = useNavigate();
+  const location   = useLocation();
 
-  const [formData,       setFormData]       = useState({ email: "", password: "" });
-  const [error,          setError]          = useState("");
-  const [loading,        setLoading]        = useState(false);
-  const [showPassword,   setShowPassword]   = useState(false);
-  const [showForgot,     setShowForgot]     = useState(false);
+  const [formData,     setFormData]     = useState({
+    email: location.state?.email || "",
+    password: ""
+  });
+  const [error,        setError]        = useState("");
+  const [successMsg,   setSuccessMsg]   = useState(
+    location.state?.registered
+      ? `Account created! Sign in with ${location.state.email}`
+      : ""
+  );
+  const [loading,      setLoading]      = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgot,   setShowForgot]   = useState(false);
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error)      setError("");
+    if (successMsg) setSuccessMsg("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,6 +109,7 @@ function Login() {
     }
     setLoading(true);
     setError("");
+    setSuccessMsg("");
     try {
       const res = await api.post("/auth/login", {
         email:    formData.email,
@@ -129,12 +119,12 @@ function Login() {
       localStorage.setItem("token", access_token);
       login({ name, email: formData.email });
       const hasResult = localStorage.getItem("career_result");
-        navigate(hasResult ? "/result" : "/");
+      navigate(hasResult ? "/result" : "/");
     } catch (err) {
       const msg = err.response?.data?.detail;
-      if      (msg === "User not found")    setError("No account found with this email.");
-      else if (msg === "Invalid password")  setError("Incorrect password.");
-      else                                  setError("Login failed. Please try again.");
+      if      (msg === "User not found")   setError("No account found with this email.");
+      else if (msg === "Invalid password") setError("Incorrect password.");
+      else                                 setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -142,13 +132,10 @@ function Login() {
 
   return (
     <>
-      {/* Forgot password modal */}
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
 
-      <div
-        className="min-h-screen bg-cover bg-center relative pt-24"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <div className="min-h-screen bg-cover bg-center relative pt-24"
+        style={{ backgroundImage: `url(${bgImage})` }}>
         <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative z-10 flex items-center justify-center min-h-[70vh] px-4">
@@ -161,62 +148,59 @@ function Login() {
               Sign in to your AimRoute account
             </p>
 
+            {/* Success message from signup redirect */}
+            {successMsg && (
+              <div className="flex items-center gap-2 text-green-300 text-sm mb-5 bg-green-900/20 py-3 px-4 rounded-xl border border-green-400/20">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {successMsg}
+              </div>
+            )}
+
+            {/* Error message */}
             {error && (
-              <p className="text-red-300 text-sm mb-4 text-center bg-red-900/20 py-2 px-4 rounded-lg">
+              <div className="flex items-center gap-2 text-red-300 text-sm mb-5 bg-red-900/20 py-3 px-4 rounded-xl border border-red-400/20">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
-              </p>
+              </div>
             )}
 
             <form className="space-y-5" onSubmit={handleSubmit}>
-
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-white">Email</label>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
+                  type="email" name="email" value={formData.email}
+                  onChange={handleChange} placeholder="Enter your email"
+                  autoComplete="email"
                   className="w-full px-4 py-3 bg-white/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
                 />
               </div>
 
-              {/* Password + show/hide */}
               <div>
                 <label className="block text-sm font-medium mb-1 text-white">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter your password"
+                    name="password" value={formData.password}
+                    onChange={handleChange} placeholder="Enter your password"
                     autoComplete="current-password"
                     className="w-full px-4 py-3 bg-white/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 pr-12"
                   />
-                  <EyeIcon
-                    show={showPassword}
-                    onToggle={() => setShowPassword(p => !p)}
-                  />
+                  <EyeIcon show={showPassword} onToggle={() => setShowPassword(p => !p)} />
                 </div>
-                {/* Forgot password — below the input field */}
                 <div className="flex justify-end mt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgot(true)}
-                    className="text-xs text-pink-300 hover:text-pink-200 hover:underline transition"
-                  >
+                  <button type="button" onClick={() => setShowForgot(true)}
+                    className="text-xs text-pink-300 hover:text-pink-200 hover:underline transition">
                     Forgot password?
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition duration-300 disabled:opacity-60"
-              >
+              <button type="submit" disabled={loading}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition duration-300 disabled:opacity-60">
                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>

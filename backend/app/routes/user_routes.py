@@ -24,11 +24,17 @@ class VerifyPasswordRequest(BaseModel):
 # ── GET /users/me ─────────────────────────────────────────────
 
 @router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     return {
-        "id":    current_user.id,
-        "name":  current_user.name,
-        "email": current_user.email,
+        "id":    user.id,
+        "name":  user.name,
+        "email": user.email,
     }
 
 
@@ -37,10 +43,14 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/change-password")
 def change_password(
     body: ChangePasswordRequest,
-    db:   Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
-    if not verify_password(body.current_password, current_user.password):
+    user = db.query(User).filter(User.email == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(body.current_password, user.password):
         raise HTTPException(status_code=400, detail="Current password is incorrect.")
 
     if body.current_password == body.new_password:
@@ -49,40 +59,42 @@ def change_password(
     if len(body.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
 
-    current_user.password = hash_password(body.new_password)
+    user.password = hash_password(body.new_password)
     db.commit()
     return {"message": "Password updated successfully."}
 
 
 # ── POST /users/verify-password ───────────────────────────────
-# Used by the Settings re-auth modal to confirm identity
-# before showing the change-password form.
 
 @router.post("/verify-password")
 def verify_password_endpoint(
     body: VerifyPasswordRequest,
-    db:   Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
-    if not verify_password(body.password, current_user.password):
+    user = db.query(User).filter(User.email == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(body.password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect password.")
+
     return {"verified": True}
 
 
 # ── DELETE /users/me ──────────────────────────────────────────
-# Permanently deletes the user account and all their results.
-# Frontend sends the JWT in Authorization header as usual.
 
 @router.delete("/me")
 def delete_account(
-    db:   Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
-    # Delete all quiz results first (foreign key safety)
-    db.query(Result).filter(Result.user_email == current_user.email).delete()
+    user = db.query(User).filter(User.email == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    # Delete the user
-    db.delete(current_user)
+    db.query(Result).filter(Result.user_email == user.email).delete()
+    db.delete(user)
     db.commit()
 
     return {"message": "Account deleted successfully."}

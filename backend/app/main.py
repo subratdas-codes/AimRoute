@@ -41,7 +41,7 @@ Base.metadata.create_all(bind=engine)
 # ── Register all routers ──────────────────────────────────────
 app.include_router(auth_routes.router,      prefix="/auth",  tags=["Auth"])
 app.include_router(login_routes.router,     prefix="/auth",  tags=["Login"])
-app.include_router(user_routes.router,      prefix="/users", tags=["User"])
+app.include_router(user_routes.router,                       tags=["User"])
 app.include_router(quiz_routes.router,      prefix="/quiz",  tags=["Quiz"])
 app.include_router(result_routes.router,                     tags=["Results"])
 app.include_router(dashboard_routes.router,                  tags=["Dashboard"])

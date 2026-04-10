@@ -63,21 +63,19 @@ function ReAuthModal({ onVerified, onClose }) {
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (!password) { setError("Please enter your current password."); return; }
-    setLoading(true); setError("");
-    try {
-      // Verify by calling change-password with same password — if it passes auth check we know it's correct.
-      // Better: your backend can expose POST /auth/verify-password. For now we pass it through.
-      await API.post("/auth/verify-password", { password });
-      onVerified(password); // pass verified password up so form doesn't re-ask
-    } catch {
-      setError("Incorrect password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleVerify = async (e) => {
+  e.preventDefault();
+  if (!password) { setError("Please enter your current password."); return; }
+  setLoading(true); setError("");
+  try {
+    await API.post("/users/verify-password", { password }); // ← changed from /auth/
+    onVerified(password);
+  } catch {
+    setError("Incorrect password. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
