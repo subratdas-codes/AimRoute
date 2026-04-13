@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
 import confetti from "canvas-confetti";
+import Footer from "../components/Footer";
 
 const INDIAN_STATES = [
   "All States","Andhra Pradesh","Assam","Bihar","Delhi","Gujarat","Haryana",
@@ -54,7 +55,6 @@ const globalStyles = `
   @keyframes starPop { 0%,100%{transform:scale(0.7) rotate(0deg);opacity:0.5} 50%{transform:scale(1.3) rotate(20deg);opacity:1} }
   @keyframes pulseRing { 0%{transform:scale(0.85);opacity:0.5} 60%{transform:scale(1.2);opacity:0} 100%{transform:scale(0.85);opacity:0} }
   @keyframes trailMove { 0%{stroke-dashoffset:300} 100%{stroke-dashoffset:-300} }
-  @keyframes countPop { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
   @keyframes orbitDot { 0%{transform:rotate(0deg) translateX(50px) rotate(0deg)} 100%{transform:rotate(360deg) translateX(50px) rotate(-360deg)} }
   .slide-up { animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
   .brand-btn {
@@ -70,7 +70,6 @@ const globalStyles = `
   .card-hover:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(124,58,237,0.13); }
 `;
 
-/* ── Background decorations ── */
 const BG_FLOATS = [
   { emoji:"🎓", top:"6%",  left:"1%",  anim:"floatA", delay:"0s",   dur:"6s"   },
   { emoji:"🚀", top:"10%", left:"82%", anim:"floatB", delay:"1s",   dur:"7s"   },
@@ -93,36 +92,33 @@ function BgScene() {
       <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(124,58,237,0.09) 1.5px,transparent 1.5px)",backgroundSize:"38px 38px"}}/>
       <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}} viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
         {["M 80 120 Q 400 350 720 450 Q 1040 550 1380 750","M 1380 80 Q 900 300 720 450 Q 540 600 60 820"].map((d,i)=>(
-          <path key={i} d={d} fill="none" stroke={i%2===0?"#e91e8c":"#7c3aed"} strokeWidth="1.5" strokeDasharray="6 8" opacity="0.1" style={{animation:`trailMove ${8+i*2}s linear infinite`,animationDelay:`${i*2}s`}}/>
+          <path key={i} d={d} fill="none" stroke={i%2===0?"#e91e8c":"#7c3aed"} strokeWidth="1.5" strokeDasharray="6 8" opacity="0.1"
+            style={{animationName:"trailMove",animationDuration:`${8+i*2}s`,animationTimingFunction:"linear",animationIterationCount:"infinite",animationDelay:`${i*2}s`}}/>
         ))}
       </svg>
-      {/* Orbiting ring */}
       <div style={{position:"absolute",top:"8%",right:"6%",width:110,height:110}}>
-        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"1.5px dashed rgba(233,30,140,0.2)",animation:"spin-slow 20s linear infinite"}}/>
-        <div style={{position:"absolute",top:"50%",left:"50%",marginTop:-5,marginLeft:-5,width:10,height:10,borderRadius:"50%",background:"#e91e8c",opacity:0.6,animation:"orbitDot 5s linear infinite"}}/>
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"1.5px dashed rgba(233,30,140,0.2)",animationName:"spin-slow",animationDuration:"20s",animationTimingFunction:"linear",animationIterationCount:"infinite"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",marginTop:-5,marginLeft:-5,width:10,height:10,borderRadius:"50%",background:"#e91e8c",opacity:0.6,animationName:"orbitDot",animationDuration:"5s",animationTimingFunction:"linear",animationIterationCount:"infinite"}}/>
       </div>
       <div style={{position:"absolute",bottom:"10%",left:"4%",width:90,height:90}}>
-        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"1.5px dashed rgba(124,58,237,0.2)",animation:"spin-rev 18s linear infinite"}}/>
-        <div style={{position:"absolute",top:"50%",left:"50%",marginTop:-4,marginLeft:-4,width:8,height:8,borderRadius:"50%",background:"#7c3aed",opacity:0.6,animation:"orbitDot 4s linear infinite reverse"}}/>
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"1.5px dashed rgba(124,58,237,0.2)",animationName:"spin-rev",animationDuration:"18s",animationTimingFunction:"linear",animationIterationCount:"infinite"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",marginTop:-4,marginLeft:-4,width:8,height:8,borderRadius:"50%",background:"#7c3aed",opacity:0.6,animationName:"orbitDot",animationDuration:"4s",animationTimingFunction:"linear",animationIterationCount:"infinite",animationDirection:"reverse"}}/>
       </div>
-      {/* Star decos */}
       {STARS.map((s,i)=>(
-        <div key={i} style={{position:"absolute",top:s.top,left:s.left,fontSize:i%2===0?"16px":"12px",color:i%2===0?"#e91e8c":"#7c3aed",opacity:0.7,animation:`starPop ${3+i*0.3}s ease-in-out infinite`,animationDelay:s.delay}}>✦</div>
+        <div key={i} style={{position:"absolute",top:s.top,left:s.left,fontSize:i%2===0?"16px":"12px",color:i%2===0?"#e91e8c":"#7c3aed",opacity:0.7,animationName:"starPop",animationDuration:`${3+i*0.3}s`,animationTimingFunction:"ease-in-out",animationIterationCount:"infinite",animationDelay:s.delay}}>✦</div>
       ))}
-      {/* Floating emoji bubbles */}
       {BG_FLOATS.map((f,i)=>(
-        <div key={i} style={{position:"absolute",top:f.top,left:f.left,width:60,height:60,borderRadius:"50%",background:"white",border:"1.5px solid rgba(233,30,140,0.1)",boxShadow:"0 8px 24px rgba(124,58,237,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,animation:`${f.anim} ${f.dur} ease-in-out infinite`,animationDelay:f.delay,overflow:"hidden"}}>
+        <div key={i} style={{position:"absolute",top:f.top,left:f.left,width:60,height:60,borderRadius:"50%",background:"white",border:"1.5px solid rgba(233,30,140,0.1)",boxShadow:"0 8px 24px rgba(124,58,237,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,animationName:f.anim,animationDuration:f.dur,animationTimingFunction:"ease-in-out",animationIterationCount:"infinite",animationDelay:f.delay,overflow:"hidden"}}>
           {f.emoji}
           <div style={{position:"absolute",inset:0,borderRadius:"50%",overflow:"hidden"}}>
-            <div style={{position:"absolute",top:0,left:0,width:"30%",height:"100%",background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent)",animation:`shimmerBar ${2+i*0.5}s ease-in-out infinite`,animationDelay:`${i*0.6}s`}}/>
+            <div style={{position:"absolute",top:0,left:0,width:"30%",height:"100%",background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent)",animationName:"shimmerBar",animationDuration:`${2+i*0.5}s`,animationTimingFunction:"ease-in-out",animationIterationCount:"infinite",animationDelay:`${i*0.6}s`}}/>
           </div>
         </div>
       ))}
-      {/* Pulse rings */}
       {[{top:"20%",left:"8%",c:"#e91e8c"},{top:"72%",left:"88%",c:"#7c3aed"}].map((p,i)=>(
         <div key={i} style={{position:"absolute",top:p.top,left:p.left}}>
           {[0,1,2].map(j=>(
-            <div key={j} style={{position:"absolute",width:50+j*25,height:50+j*25,borderRadius:"50%",border:`1.5px solid ${p.c}`,top:-(j*12),left:-(j*12),opacity:0,animation:`pulseRing 2.5s ease-out infinite`,animationDelay:`${j*0.7}s`}}/>
+            <div key={j} style={{position:"absolute",width:50+j*25,height:50+j*25,borderRadius:"50%",border:`1.5px solid ${p.c}`,top:-(j*12),left:-(j*12),opacity:0,animationName:"pulseRing",animationDuration:"2.5s",animationTimingFunction:"ease-out",animationIterationCount:"infinite",animationDelay:`${j*0.7}s`}}/>
           ))}
           <div style={{width:12,height:12,borderRadius:"50%",background:p.c,opacity:0.7}}/>
         </div>
@@ -176,63 +172,23 @@ const SuccessModal = ({ onClose, onDashboard }) => (
 );
 
 const CongratsOverlay = ({ onClose, closing }) => (
-  <div style={{
-    position:"fixed",inset:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",
-    background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",
-    animation: closing ? "congratsOut 0.4s ease forwards" : "none",
-  }}>
-    <div style={{
-      background:"white",borderRadius:32,padding:"44px 40px",maxWidth:400,width:"90%",textAlign:"center",
-      boxShadow:"0 40px 100px rgba(124,58,237,0.35)",
-      animation: closing ? "none" : "congratsIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",
-      position:"relative",overflow:"hidden",
-    }}>
-      {/* top gradient bar */}
+  <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",animation:closing?"congratsOut 0.4s ease forwards":"none"}}>
+    <div style={{background:"white",borderRadius:32,padding:"44px 40px",maxWidth:400,width:"90%",textAlign:"center",boxShadow:"0 40px 100px rgba(124,58,237,0.35)",animation:closing?"none":"congratsIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:"linear-gradient(90deg,#e91e8c,#7c3aed,#e91e8c)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
-
-      {/* emoji */}
       <div style={{fontSize:72,marginBottom:12,display:"block",animation:"emojiPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",lineHeight:1}}>🎉</div>
-
-      <h2 style={{
-        fontSize:30,fontWeight:800,marginBottom:8,letterSpacing:"-0.5px",
-        background:"linear-gradient(135deg,#e91e8c,#7c3aed)",
-        backgroundSize:"200% 200%",
-        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-        animation:"shimmerText 3s linear infinite",
-      }}>Congratulations!</h2>
-
-      <p style={{fontSize:15,color:"#6b7280",marginBottom:6,fontWeight:600}}>
-        You've completed your Career Assessment 🚀
-      </p>
-      <p style={{fontSize:13,color:"#a855f7",fontWeight:600,marginBottom:28}}>
-        Your personalised results are ready below ✨
-      </p>
-
+      <h2 style={{fontSize:30,fontWeight:800,marginBottom:8,letterSpacing:"-0.5px",background:"linear-gradient(135deg,#e91e8c,#7c3aed)",backgroundSize:"200% 200%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmerText 3s linear infinite"}}>Congratulations!</h2>
+      <p style={{fontSize:15,color:"#6b7280",marginBottom:6,fontWeight:600}}>You've completed your Career Assessment 🚀</p>
+      <p style={{fontSize:13,color:"#a855f7",fontWeight:600,marginBottom:28}}>Your personalised results are ready below ✨</p>
       <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:20,flexWrap:"wrap"}}>
         {["🏆 Best Match Found","📊 Colleges Listed","🗺️ Roadmap Ready"].map((t,i)=>(
-          <span key={i} style={{fontSize:11,padding:"5px 12px",borderRadius:99,background:`linear-gradient(135deg,${i%2===0?"#fce7f3,#ede9fe":"#ede9fe,#fce7f3"})`,border:"1.5px solid #e9d5ff",color:"#7c3aed",fontWeight:700}}>
-            {t}
-          </span>
+          <span key={i} style={{fontSize:11,padding:"5px 12px",borderRadius:99,background:`linear-gradient(135deg,${i%2===0?"#fce7f3,#ede9fe":"#ede9fe,#fce7f3"})`,border:"1.5px solid #e9d5ff",color:"#7c3aed",fontWeight:700}}>{t}</span>
         ))}
       </div>
-
-      <button onClick={onClose} style={{
-        width:"100%",padding:"14px",borderRadius:14,fontSize:15,fontWeight:700,
-        background:"linear-gradient(135deg,#e91e8c,#7c3aed)",
-        backgroundSize:"200% 200%",animation:"shimmerText 4s ease infinite",
-        border:"none",color:"white",cursor:"pointer",
-        boxShadow:"0 8px 28px rgba(233,30,140,0.3)",
-        transition:"transform 0.2s",
-      }}
-        onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
-        onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
-      >
+      <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:14,fontSize:15,fontWeight:700,background:"linear-gradient(135deg,#e91e8c,#7c3aed)",backgroundSize:"200% 200%",animation:"shimmerText 4s ease infinite",border:"none",color:"white",cursor:"pointer",boxShadow:"0 8px 28px rgba(233,30,140,0.3)",transition:"transform 0.2s"}}
+        onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
         View My Results →
       </button>
-
       <p style={{fontSize:11,color:"#d1d5db",marginTop:12}}>Auto-closing in a moment...</p>
-
-      {/* bottom shimmer bar */}
       <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#7c3aed,#e91e8c,#7c3aed)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
     </div>
   </div>
@@ -258,63 +214,42 @@ const Result = () => {
   const [filterLanguage, setFilterLanguage]   = useState("All Languages");
   const [filterGender, setFilterGender]       = useState("All Types");
 
+  // ── College search state ──────────────────────────────────
+  const [collegeSearch, setCollegeSearch]     = useState("");
+
   useEffect(() => {
     const stored = localStorage.getItem("career_result");
     if (stored) {
       setData(JSON.parse(stored));
-
-      // 🔊 Play celebration sound using Web Audio API (no file needed)
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioCtx();
         const playNote = (freq, start, dur, vol = 0.3) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+          const osc = ctx.createOscillator(); const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = "sine"; osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
           gain.gain.setValueAtTime(0, ctx.currentTime + start);
           gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + start + 0.02);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-          osc.start(ctx.currentTime + start);
-          osc.stop(ctx.currentTime + start + dur);
+          osc.start(ctx.currentTime + start); osc.stop(ctx.currentTime + start + dur);
         };
-        // Uplifting fanfare melody
-        playNote(523, 0.0,  0.18); // C5
-        playNote(659, 0.18, 0.18); // E5
-        playNote(784, 0.36, 0.18); // G5
-        playNote(1047,0.54, 0.35); // C6
-        playNote(880, 0.72, 0.18); // A5
-        playNote(1047,0.90, 0.45); // C6 long
-      } catch(e) { /* audio blocked, skip */ }
-
-      // 🎉 Show congratulations overlay
+        playNote(523,0.0,0.18); playNote(659,0.18,0.18); playNote(784,0.36,0.18);
+        playNote(1047,0.54,0.35); playNote(880,0.72,0.18); playNote(1047,0.90,0.45);
+      } catch(e) {}
       setShowCongrats(true);
-
-      // Auto-dismiss after 3.2s with exit animation
-      const dismissTimer = setTimeout(() => {
-        setCongratsOut(true);
-        setTimeout(() => setShowCongrats(false), 400);
-      }, 3200);
-
-      // 🎉 Confetti burst on load
+      const dismissTimer = setTimeout(() => { setCongratsOut(true); setTimeout(() => setShowCongrats(false), 400); }, 3200);
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-
-      // 🎉 Continuous confetti for 2 seconds
-      const duration = 2000;
-      const end = Date.now() + duration;
+      const end = Date.now() + 2000;
       const interval = setInterval(() => {
         if (Date.now() > end) return clearInterval(interval);
         confetti({ particleCount: 20, spread: 60, origin: { y: Math.random() - 0.2 } });
       }, 250);
-
       return () => { clearInterval(interval); clearTimeout(dismissTimer); };
     }
   }, []);
 
   useEffect(() => {
-    if (data) { setVisibleCount(6); fetchColleges(); }
+    if (data) { setVisibleCount(6); setCollegeSearch(""); fetchColleges(); }
   }, [data, filterState, filterLanguage, filterGender]);
 
   const fetchColleges = async () => {
@@ -330,6 +265,19 @@ const Result = () => {
     } catch { setColleges([]); setTotalColleges(0); }
     finally { setLoadingColleges(false); }
   };
+
+  // ── Client-side search filter applied on top of API results ──
+  // Searches college name, city, and state — instant, no extra API call
+  const filteredColleges = useMemo(() => {
+    const q = collegeSearch.trim().toLowerCase();
+    if (!q) return colleges;
+    return colleges.filter(col =>
+      col.college_name?.toLowerCase().includes(q) ||
+      col.city?.toLowerCase().includes(q) ||
+      col.state?.toLowerCase().includes(q) ||
+      col.category?.toLowerCase().includes(q)
+    );
+  }, [colleges, collegeSearch]);
 
   const handleSave = () => { if (!user) { setShowGuestModal(true); return; } doSave(); };
   const doSave = async () => {
@@ -350,9 +298,6 @@ const Result = () => {
   const label        = LEVEL_LABELS[data.level] || LEVEL_LABELS["grad"];
   const roadmap      = ROADMAP[data.level]       || ROADMAP["grad"];
   const activeCareer = data.top_careers[activeTab];
-  const fitStyle     = FIT_COLORS[activeCareer?.fit] || { bg:"#f9fafb", text:"#6b7280", border:"#e5e7eb" };
-
-  /* shared card style */
   const card = { background:"white", border:"1.5px solid #f3e8ff", borderRadius:24, padding:"32px 28px", boxShadow:"0 20px 60px rgba(124,58,237,0.08), 0 4px 16px rgba(0,0,0,0.04)" };
 
   return (
@@ -382,7 +327,6 @@ const Result = () => {
 
         {/* ── HERO ── */}
         <div className="slide-up" style={{...card,textAlign:"center",marginBottom:20,position:"relative",overflow:"hidden"}}>
-          {/* shimmer top accent */}
           <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:"linear-gradient(90deg,#e91e8c,#7c3aed)",backgroundSize:"200% 200%",animation:"gradientShift 4s ease infinite"}}/>
           <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,#fce7f3,#ede9fe)",border:"1.5px solid #e9d5ff",borderRadius:99,padding:"5px 16px",marginBottom:16}}>
             <div style={{width:6,height:6,borderRadius:"50%",background:"linear-gradient(135deg,#e91e8c,#7c3aed)"}}/>
@@ -395,13 +339,11 @@ const Result = () => {
               <span key={i} style={{background:i===1?"linear-gradient(135deg,#fce7f3,#ede9fe)":"#f9fafb",border:`1.5px solid ${i===1?"#e9d5ff":"#f3f4f6"}`,color:i===1?"#7c3aed":"#6b7280",padding:"6px 16px",borderRadius:99,fontSize:13,fontWeight:i===1?700:500}}>{t}</span>
             ))}
           </div>
-          {/* Score ring */}
           <div style={{margin:"24px auto 0",width:90,height:90,position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg viewBox="0 0 90 90" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
               <circle cx="45" cy="45" r="38" fill="none" stroke="#f3e8ff" strokeWidth="7"/>
               <circle cx="45" cy="45" r="38" fill="none" stroke="url(#sg)" strokeWidth="7" strokeLinecap="round"
-                strokeDasharray={`${2*Math.PI*38*Math.min(data.percentage,100)/100} ${2*Math.PI*38}`}
-                transform="rotate(-90 45 45)"/>
+                strokeDasharray={`${2*Math.PI*38*Math.min(data.percentage,100)/100} ${2*Math.PI*38}`} transform="rotate(-90 45 45)"/>
               <defs><linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#e91e8c"/><stop offset="100%" stopColor="#7c3aed"/></linearGradient></defs>
             </svg>
             <div style={{textAlign:"center"}}>
@@ -424,15 +366,12 @@ const Result = () => {
                   <div style={{width:44,height:44,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,
                     background:i===0?"linear-gradient(135deg,#e91e8c,#7c3aed)":i===roadmap.length-1?"linear-gradient(135deg,#10b981,#059669)":"linear-gradient(135deg,#fce7f3,#ede9fe)",
                     color:i===0||i===roadmap.length-1?"white":"#7c3aed",
-                    boxShadow:i===0?"0 4px 16px rgba(233,30,140,0.3)":i===roadmap.length-1?"0 4px 16px rgba(16,185,129,0.3)":"none",
-                  }}>
+                    boxShadow:i===0?"0 4px 16px rgba(233,30,140,0.3)":i===roadmap.length-1?"0 4px 16px rgba(16,185,129,0.3)":"none"}}>
                     {i+1}
                   </div>
                   <p style={{fontSize:11,textAlign:"center",color:"#6b7280",marginTop:8,lineHeight:1.3}}>{step}</p>
                 </div>
-                {i<roadmap.length-1 && (
-                  <div style={{flex:1,height:3,borderRadius:99,background:"linear-gradient(90deg,#e9d5ff,#fce7f3)",minWidth:20}}/>
-                )}
+                {i<roadmap.length-1 && <div style={{flex:1,height:3,borderRadius:99,background:"linear-gradient(90deg,#e9d5ff,#fce7f3)",minWidth:20}}/>}
               </React.Fragment>
             ))}
           </div>
@@ -462,20 +401,16 @@ const Result = () => {
                   <span style={{fontSize:11,padding:"3px 10px",borderRadius:99,border:`1.5px solid ${(FIT_COLORS[c.fit]||{border:"#e5e7eb"}).border}`,background:(FIT_COLORS[c.fit]||{bg:"#f9fafb"}).bg,color:(FIT_COLORS[c.fit]||{text:"#6b7280"}).text,fontWeight:600}}>
                     {c.fit}
                   </span>
-                  {c.salary_min && (
-                    <p style={{fontSize:12,color:"#16a34a",fontWeight:700,marginTop:10}}>₹{c.salary_min} - {c.salary_max} LPA</p>
-                  )}
+                  {c.salary_min && <p style={{fontSize:12,color:"#16a34a",fontWeight:700,marginTop:10}}>₹{c.salary_min} - {c.salary_max} LPA</p>}
                 </button>
               );
             })}
           </div>
-
           {activeCareer?.salary_note && (
             <div style={{marginTop:16,padding:"14px 18px",background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1.5px solid #86efac",borderRadius:14}}>
               <p style={{fontSize:13,color:"#16a34a",margin:0}}><span style={{fontWeight:700}}>{activeCareer.career}:</span> {activeCareer.salary_note}</p>
             </div>
           )}
-
           <div style={{marginTop:20,paddingTop:20,borderTop:"1.5px solid #f3f4f6"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,background:"linear-gradient(135deg,#fce7f3,#ede9fe)",borderRadius:18,padding:"18px 20px",border:"1.5px solid #e9d5ff",flexWrap:"wrap"}}>
               <div>
@@ -498,9 +433,7 @@ const Result = () => {
             </div>
             <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
               {data.reasons.slice(0,6).map((r,i)=>(
-                <span key={i} style={{padding:"7px 16px",background:`linear-gradient(135deg,${i%2===0?"#fce7f3,#ede9fe":"#ede9fe,#fce7f3"})`,border:"1.5px solid #e9d5ff",borderRadius:99,fontSize:12,color:"#7c3aed",fontWeight:600}}>
-                  {r}
-                </span>
+                <span key={i} style={{padding:"7px 16px",background:`linear-gradient(135deg,${i%2===0?"#fce7f3,#ede9fe":"#ede9fe,#fce7f3"})`,border:"1.5px solid #e9d5ff",borderRadius:99,fontSize:12,color:"#7c3aed",fontWeight:600}}>{r}</span>
               ))}
             </div>
           </div>
@@ -514,10 +447,45 @@ const Result = () => {
               <div>
                 <h2 style={{fontSize:17,fontWeight:700,color:"#1a1a2e",margin:0}}>Suggested Colleges</h2>
                 <p style={{fontSize:12,color:"#9ca3af",margin:"2px 0 0"}}>
-                  Showing <span style={{color:"#7c3aed",fontWeight:700}}>{Math.min(visibleCount,colleges.length)}</span> of <span style={{color:"#7c3aed",fontWeight:700}}>{totalColleges}</span> colleges
+                  {collegeSearch
+                    ? <>Showing <span style={{color:"#7c3aed",fontWeight:700}}>{Math.min(visibleCount, filteredColleges.length)}</span> of <span style={{color:"#7c3aed",fontWeight:700}}>{filteredColleges.length}</span> matching "<span style={{color:"#e91e8c",fontWeight:700}}>{collegeSearch}</span>"</>
+                    : <>Showing <span style={{color:"#7c3aed",fontWeight:700}}>{Math.min(visibleCount,colleges.length)}</span> of <span style={{color:"#7c3aed",fontWeight:700}}>{totalColleges}</span> colleges</>
+                  }
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* ── College search bar ── */}
+          <div style={{position:"relative",marginBottom:16}}>
+            {/* Search icon */}
+            <svg style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",width:16,height:16,color:"#a855f7",pointerEvents:"none"}}
+              fill="none" stroke="#a855f7" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              type="text"
+              value={collegeSearch}
+              onChange={e => { setCollegeSearch(e.target.value); setVisibleCount(6); }}
+              placeholder="Search by college name, city, or state..."
+              style={{
+                width:"100%", boxSizing:"border-box",
+                padding:"11px 40px 11px 42px",
+                border:"1.5px solid #e9d5ff", borderRadius:14,
+                fontSize:13, color:"#1a1a2e", background:"#fdf4ff",
+                outline:"none", fontFamily:"'Sora',sans-serif",
+                transition:"border-color 0.2s, box-shadow 0.2s",
+              }}
+              onFocus={e=>{ e.target.style.borderColor="#a855f7"; e.target.style.boxShadow="0 0 0 3px rgba(168,85,247,0.12)"; }}
+              onBlur={e=>{  e.target.style.borderColor="#e9d5ff"; e.target.style.boxShadow="none"; }}
+            />
+            {/* Clear button */}
+            {collegeSearch && (
+              <button
+                onClick={() => { setCollegeSearch(""); setVisibleCount(6); }}
+                style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"#e9d5ff",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#7c3aed",fontWeight:700,padding:0}}
+              >✕</button>
+            )}
           </div>
 
           {/* Filters */}
@@ -531,7 +499,7 @@ const Result = () => {
               ].map((f,i)=>(
                 <div key={i}>
                   <label style={{fontSize:11,color:"#9ca3af",fontWeight:600,display:"block",marginBottom:5}}>{f.label}</label>
-                  <select value={f.val} onChange={e=>f.set(e.target.value)}
+                  <select value={f.val} onChange={e=>{ f.set(e.target.value); setCollegeSearch(""); }}
                     style={{width:"100%",border:"1.5px solid #e9d5ff",borderRadius:10,padding:"8px 12px",fontSize:13,color:"#1a1a2e",background:"white",outline:"none",cursor:"pointer",fontFamily:"'Sora',sans-serif"}}>
                     {f.opts.map(o=><option key={o}>{o}</option>)}
                   </select>
@@ -542,18 +510,31 @@ const Result = () => {
 
           {loadingColleges ? (
             <div style={{textAlign:"center",padding:"48px 0"}}>
-              <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid transparent",borderTopColor:"#e91e8c",animation:"spin-slow 1s linear infinite",margin:"0 auto 12px"}}/>
+              <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid transparent",borderTopColor:"#e91e8c",animationName:"spin-slow",animationDuration:"1s",animationTimingFunction:"linear",animationIterationCount:"infinite",margin:"0 auto 12px"}}/>
               <p style={{color:"#9ca3af",fontSize:13}}>Finding best colleges for you...</p>
             </div>
-          ) : colleges.length===0 ? (
+          ) : filteredColleges.length === 0 ? (
             <div style={{textAlign:"center",padding:"32px 0"}}>
-              <p style={{color:"#9ca3af",marginBottom:4}}>No colleges found for the selected filters.</p>
-              <p style={{fontSize:13,color:"#d1d5db"}}>Try selecting All States or changing the filters.</p>
+              {collegeSearch ? (
+                <>
+                  <p style={{fontSize:24,marginBottom:8}}>🔍</p>
+                  <p style={{color:"#9ca3af",marginBottom:4}}>No colleges found for "<strong style={{color:"#7c3aed"}}>{collegeSearch}</strong>"</p>
+                  <p style={{fontSize:13,color:"#d1d5db"}}>Try a different name, city, or state.</p>
+                  <button onClick={()=>setCollegeSearch("")} style={{marginTop:12,padding:"8px 20px",background:"linear-gradient(135deg,#fce7f3,#ede9fe)",border:"1.5px solid #e9d5ff",borderRadius:10,color:"#7c3aed",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+                    Clear search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{color:"#9ca3af",marginBottom:4}}>No colleges found for the selected filters.</p>
+                  <p style={{fontSize:13,color:"#d1d5db"}}>Try selecting All States or changing the filters.</p>
+                </>
+              )}
             </div>
           ) : (
             <>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14}}>
-                {colleges.slice(0,visibleCount).map((col,i)=>(
+                {filteredColleges.slice(0,visibleCount).map((col,i)=>(
                   <div key={i} className="card-hover" style={{padding:"16px",border:"1.5px solid #f3f4f6",borderRadius:16,background:"#fafafa",cursor:"default"}}>
                     <h3 style={{fontWeight:700,color:"#1a1a2e",marginBottom:4,fontSize:14}}>{col.college_name}</h3>
                     <p style={{fontSize:12,color:"#9ca3af",marginBottom:10}}>{col.city}, {col.state}</p>
@@ -562,6 +543,7 @@ const Result = () => {
                       {col.medium&&col.medium!=="English"&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:99,background:"#ede9fe",color:"#7c3aed",fontWeight:600}}>{col.medium}</span>}
                       {col.gender&&col.gender!=="Co-ed"&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:99,background:"#fce7f3",color:"#be185d",fontWeight:600}}>{col.gender}</span>}
                       {col.nirf_rank&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:99,background:"linear-gradient(135deg,#fce7f3,#ede9fe)",color:"#7c3aed",fontWeight:700,border:"1px solid #e9d5ff"}}>NIRF #{col.nirf_rank}</span>}
+                      {col.eligibility==="aspirational"&&<span style={{fontSize:11,padding:"3px 10px",borderRadius:99,background:"#fff7ed",color:"#ea580c",fontWeight:600,border:"1px solid #fdba74"}}>Aspirational</span>}
                     </div>
                     {col.min_cutoff>(data.percentage||0)
                       ? <p style={{fontSize:11,color:"#ea580c",marginTop:4}}>Your score ({data.percentage}%) is below cutoff ({col.min_cutoff}%)</p>
@@ -572,13 +554,13 @@ const Result = () => {
                   </div>
                 ))}
               </div>
-              {visibleCount<colleges.length && (
+              {visibleCount < filteredColleges.length && (
                 <div style={{textAlign:"center",marginTop:20}}>
                   <button onClick={()=>setVisibleCount(v=>v+6)}
                     style={{padding:"12px 28px",background:"linear-gradient(135deg,#fce7f3,#ede9fe)",border:"1.5px solid #e9d5ff",borderRadius:14,color:"#7c3aed",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}
                     onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(124,58,237,0.15)"}
                     onMouseLeave={e=>e.currentTarget.style.boxShadow="none"}>
-                    Load More ({colleges.length-visibleCount} remaining)
+                    Load More ({filteredColleges.length - visibleCount} remaining)
                   </button>
                 </div>
               )}
@@ -593,8 +575,7 @@ const Result = () => {
               ✓ Result saved to your dashboard!
             </div>
           ) : (
-            <button onClick={handleSave} disabled={saving} className="brand-btn"
-              style={{width:"100%",padding:"17px",borderRadius:16,fontSize:15,fontWeight:700}}>
+            <button onClick={handleSave} disabled={saving} className="brand-btn" style={{width:"100%",padding:"17px",borderRadius:16,fontSize:15,fontWeight:700}}>
               {saving?"Saving...":user?"Save My Result to Dashboard":"Login to Save Result"}
             </button>
           )}
@@ -607,6 +588,7 @@ const Result = () => {
         </div>
 
       </div>
+      <Footer />
     </div>
   );
 };

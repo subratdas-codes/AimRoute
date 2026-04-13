@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
+import Footer from "../components/Footer";
 
 const LEVELS = [
   {
@@ -121,6 +122,7 @@ export default function CareerPath() {
           <button onClick={() => navigate("/services")} className="text-sm text-purple-600 font-semibold hover:text-purple-800 transition-colors">How does it work? →</button>
         </div>
       </div>
+     <Footer />
     </div>
   );
 }
