@@ -11,7 +11,7 @@ from app.utils.email_handler import send_result_email
 
 router = APIRouter(prefix="/results", tags=["Results"])
 
-DASHBOARD_URL = "http://localhost:5173/dashboard"
+DASHBOARD_URL = "https://aimroute-live-drab.vercel.app/dashboard"
 
 
 def get_db():

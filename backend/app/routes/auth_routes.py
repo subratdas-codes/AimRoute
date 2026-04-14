@@ -56,7 +56,7 @@ async def forgot_password(
         "expires": datetime.utcnow() + timedelta(minutes=30)
     }
 
-    reset_link = f"http://localhost:5173/reset-password?token={token}"
+    reset_link = f"https://aimroute-live-drab.vercel.app/reset-password?token={token}"
     await send_reset_email(request.email, reset_link)
 
     return {"message": "If this email is registered, a reset link has been sent."}
