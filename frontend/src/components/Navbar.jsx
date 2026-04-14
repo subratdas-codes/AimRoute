@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/logo.PNG";
+import logo from "../assets/logo.png";
 
 const ADMIN_EMAILS = ["aimroute.noreply@gmail.com"];
 
