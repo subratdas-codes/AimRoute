@@ -51,6 +51,19 @@ app.include_router(ml_router,               prefix="/ml",    tags=["ML"])
 app.include_router(admin_router)
 app.include_router(career_router)
 
+
+# ── Startup Event ─────────────────────────────────────────────
+@app.on_event("startup")
+async def startup_event():
+    print("")
+    print("🚀 AimRoute Backend Started!")
+    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("📧 Email    : aimroute.noreply@gmail.com")
+    print("🔑 Password : Admin@123")
+    print("🌐 Login URL: http://localhost:5173/admin-login")
+    print("")
+
+
 @app.get("/")
 def home():
     return {"message": "AimRoute backend is running"}
