@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import API from "../services/api";
+import Footer from "../components/Footer";
 
 // ── Motivational messages ─────────────────────────────────────
 const GENERIC_MESSAGES = [
@@ -536,6 +537,7 @@ export default function CareerQuestions() {
           <p style={{ color: "#c4b5fd", fontSize: 11, textAlign: "center", marginTop: 12 }}>Press Enter to continue</p>
         </div>
       </div>
+        <Footer />
     </div>
   );
 

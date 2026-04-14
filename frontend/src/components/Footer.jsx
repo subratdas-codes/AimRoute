@@ -42,17 +42,17 @@ const NAV_LINKS = {
     { label: "After PG",         path: "/career-path/pg" },
   ],
   "Features": [
-    { label: "College Finder",       path: "/result" },
-    { label: "Career Roadmap",       path: "/roadmap" },
-    { label: "Exam Eligibility",     path: "/dashboard" },
-    { label: "AI Career Chat",       path: "/career-path" },
-    { label: "Services",             path: "/services" },
+    { label: "College Finder",   path: "/result" },
+    { label: "Career Roadmap",   path: "/roadmap" },
+    { label: "Exam Eligibility", path: "/dashboard" },
+    { label: "Compare Careers",  path: "/compare" },
+    { label: "Services",         path: "/services" },
   ],
   "Account": [
-    { label: "Login",       path: "/login" },
-    { label: "Sign Up",     path: "/signup" },
-    { label: "Dashboard",   path: "/dashboard" },
-    { label: "Settings",    path: "/settings" },
+    { label: "Login",      path: "/login" },
+    { label: "Sign Up",    path: "/signup" },
+    { label: "Dashboard",  path: "/dashboard" },
+    { label: "Settings",   path: "/settings" },
   ],
 };
 
@@ -62,25 +62,6 @@ export default function Footer() {
 
   return (
     <footer className="bg-gray-950 text-gray-400">
-
-      {/* ── Top CTA strip ── */}
-      <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-700 py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="text-2xl font-extrabold text-white mb-1">
-              Still figuring out your career?
-            </h3>
-            <p className="text-purple-200 text-sm">
-              Free · No login needed · Results in 3 minutes
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/career-path")}
-            className="bg-white text-purple-700 font-bold px-8 py-3 rounded-full hover:bg-purple-50 transition-colors shadow-lg whitespace-nowrap text-sm">
-            Start Free Assessment →
-          </button>
-        </div>
-      </div>
 
       {/* ── Main footer body ── */}
       <div className="max-w-6xl mx-auto px-6 py-14">
@@ -139,16 +120,14 @@ export default function Footer() {
 
         {/* ── Divider ── */}
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-
           <p className="text-gray-600 text-xs">
             © {year} AimRoute. All rights reserved. Made with ❤️ for Indian students.
           </p>
-
           <div className="flex items-center gap-6">
             {[
-              { label: "Privacy Policy",    path: "/" },
-              { label: "Terms of Service",  path: "/" },
-              { label: "Contact Us",        path: "/" },
+              { label: "Privacy Policy",   path: "/" },
+              { label: "Terms of Service", path: "/" },
+              { label: "Contact Us",       path: "/" },
             ].map((item) => (
               <button key={item.label}
                 onClick={() => navigate(item.path)}
@@ -157,7 +136,6 @@ export default function Footer() {
               </button>
             ))}
           </div>
-
         </div>
       </div>
 

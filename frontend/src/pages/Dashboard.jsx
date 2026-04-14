@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import ScholarshipFinder from "../components/ScholarshipFinder";
 import ExamEligibilityChecker from "../components/ExamEligibilityChecker";
+import Footer from "../components/Footer";
 
 const LEVEL_LABEL = {
   "10th":"10th Grade","12th":"12th Grade","grad":"Graduation","pg":"Post Graduation",
@@ -824,6 +825,7 @@ export default function Dashboard() {
         </div>
 
       </div>
+       <Footer />
     </div>
   );
 }
