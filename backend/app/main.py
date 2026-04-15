@@ -31,7 +31,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
+         
         "https://aimroute-live-drab.vercel.app"
     ],
     allow_credentials=True,
