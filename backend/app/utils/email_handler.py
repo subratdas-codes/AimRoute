@@ -99,10 +99,18 @@ def _gmail_access_token(seconds: float = 30):
     }).encode("ascii")
     req = urlrequest.Request("https://oauth2.googleapis.com/token", data=data,
                              headers={"Content-Type": "application/x-www-form-urlencoded"})
-    with urlrequest.urlopen(req, timeout=seconds) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urlrequest.urlopen(req, timeout=seconds) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except urlerror.HTTPError as e:
+        detail = ""
+        try:
+            detail = e.read().decode("utf-8", "replace")[:500]
+        except Exception:
+            pass
+        raise RuntimeError(f"gmail token endpoint {e.code}: {detail}") from e
     if "access_token" not in body:
-        raise RuntimeError(f"gmail token error: {body}")
+        raise RuntimeError(f"gmail token endpoint: {body}")
     return body["access_token"]
 
 
