@@ -356,14 +356,13 @@ const UsersSection = ({ showToast }) => {
   };
 
   const handleResetPassword = async (u) => {
-    setReset({ user: u, new_password: "", loading: true });
+    setReset({ user: u, loading: true });
     try {
       const r = await adminService.resetUserPassword(u.id, {});
-      setReset({ user: u, new_password: r.data.new_password, loading: false });
-      showToast("Password reset!", "success");
-      if (modal === "view") setViewData(v => v ? { ...v, password_hash: r.data.password_hash || v.password_hash } : v);
+      setReset({ user: u, loading: false, email: r.data.email });
+      showToast("Reset link sent to user!", "success");
     } catch (e) {
-      showToast(e.response?.data?.detail || "Error resetting password", "error");
+      showToast(e.response?.data?.detail || "Error sending reset link", "error");
       setReset(null);
     }
   };
@@ -580,23 +579,18 @@ const UsersSection = ({ showToast }) => {
       {reset && (
         <Modal title="Reset Password" onClose={() => setReset(null)}>
           {reset.loading ? (
-            <div className="text-center py-8 text-gray-500 text-sm">Resetting password…</div>
+            <div className="text-center py-8 text-gray-500 text-sm">Sending reset link…</div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                New password for <b className="text-gray-900">{reset.user.name}</b>
-                {reset.user.email ? <span className="text-gray-400"> ({reset.user.email})</span> : null}
-              </p>
-              <div className="flex items-center gap-2 bg-gray-900 rounded-xl p-3">
-                <code className="text-emerald-400 text-sm flex-1 break-all select-all">{reset.new_password}</code>
-                <button
-                  onClick={() => { navigator.clipboard?.writeText(reset.new_password); showToast("Password copied!", "success"); }}
-                  className="text-purple-300 hover:text-purple-200 text-xs font-semibold bg-purple-900/40 px-3 py-1.5 rounded-lg shrink-0 transition-colors">
-                  Copy
-                </button>
-              </div>
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
-                Share this password with the user securely and ask them to change it after logging in.
+              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                <span className="text-xl">📧</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Reset link sent!</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    An email with a reset link has been sent to <b className="text-gray-700">{reset.email}</b>.
+                    The user can click it to set their own new password. The link is valid for 30 minutes.
+                  </p>
+                </div>
               </div>
               <button onClick={() => setReset(null)} className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
                 Done

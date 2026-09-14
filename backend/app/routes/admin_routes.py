@@ -5,7 +5,6 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 import secrets
-import string
 
 from app.database.connection import get_db
 from app.models.user_model import User
@@ -16,6 +15,8 @@ from app.models.activity_model import UserActivity
 from app.utils.dependencies import get_current_user
 from app.utils.hash import hash_password
 from app.utils.activity import log_activity
+from app.utils.email_handler import send_reset_email_background
+from app.routes.auth_routes import reset_tokens, FRONTEND_URL
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -38,9 +39,6 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     is_banned: Optional[bool] = None
-
-class UserResetPassword(BaseModel):
-    new_password: Optional[str] = None
 
 class UserCreate(BaseModel):
     name: str
@@ -281,32 +279,27 @@ def delete_user(user_id: int, db: Session = Depends(get_db), admin=Depends(requi
 
 
 @router.post("/users/{user_id}/reset-password")
-def reset_user_password(user_id: int, body: UserResetPassword, db: Session = Depends(get_db), admin=Depends(require_admin)):
+def reset_user_password(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.email in ADMIN_EMAILS:
+        raise HTTPException(status_code=400, detail="Cannot reset the admin's password from the panel.")
 
-    if body.new_password and len(body.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
-
-    new_password = body.new_password
-    if not new_password:
-        alphabet = string.ascii_letters + string.digits
-        new_password = "".join(secrets.choice(alphabet) for _ in range(10))
-
-    user.password = hash_password(new_password)
-    db.commit()
-    log_activity(db, user.email, "password_reset",
-                 f"Password reset by admin"
-                 + (" to provided password" if body.new_password else " (auto-generated)"))
+    token = secrets.token_urlsafe(32)
+    reset_tokens[token] = {
+        "email": user.email,
+        "expires": datetime.utcnow() + timedelta(minutes=30),
+        "source": "admin",
+    }
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+    send_reset_email_background(user.email, reset_link)
+    log_activity(db, user.email, "password_reset", "Password reset link sent by admin")
 
     return {
-        "id": user.id,
-        "name": user.name,
+        "message": "Password reset link sent to the user's email.",
         "email": user.email,
-        "new_password": new_password,
-        "generated": body.new_password is None,
-        "message": "Password reset successfully. Share the new password with the user securely."
+        "method": "email",
     }
 
 
