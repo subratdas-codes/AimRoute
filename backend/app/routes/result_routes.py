@@ -1,7 +1,8 @@
 import json
 import os
-import asyncio
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+import time
+import threading
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
@@ -37,10 +38,28 @@ class SaveResultRequest(BaseModel):
 
 
 # ── Save result + send email ──────────────────────────────────
+def _send_result_email_async(email: str, user_name: str, top_career: str, level: str):
+    """Fire-and-forget the result email on a daemon thread with retries."""
+    def _run():
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                send_result_email(email, user_name, top_career, level, DASHBOARD_URL)
+                print(f"[Email] result email SENT to {email} (attempt {attempt})")
+                return
+            except Exception as e:
+                last_err = e
+                print(f"[Email] attempt {attempt} failed for {email}: {type(e).__name__}: {e}")
+                time.sleep(3 * attempt)
+        print(f"[Email] result email FAILED for {email}: {last_err}")
+        import traceback
+        print(traceback.format_exc())
+    threading.Thread(target=_run, daemon=True).start()
+
+
 @router.post("/save")
 async def save_result(
     body: SaveResultRequest,
-    background_tasks: BackgroundTasks,
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -64,24 +83,8 @@ async def save_result(
     user = db.query(User).filter(User.email == current_user).first()
     user_name = user.name if user else "Student"
 
-    # Send congratulation email in background (non-blocking)
-    async def _send_result_email_safe():
-        try:
-            await asyncio.to_thread(
-                send_result_email,
-                current_user,
-                user_name,
-                body.top_career,
-                body.level,
-                DASHBOARD_URL,
-            )
-            print(f"[Email] result email SENT to {current_user}")
-        except Exception as e:
-            print(f"[Email] result email send failed for {current_user}: {type(e).__name__}: {e}")
-            import traceback
-            print(traceback.format_exc())
-
-    background_tasks.add_task(_send_result_email_safe)
+    # Send congratulation email instantly in a background thread (non-blocking)
+    _send_result_email_async(current_user, user_name, body.top_career, body.level)
 
     return {"message": "Result saved successfully", "id": result.id}
 
