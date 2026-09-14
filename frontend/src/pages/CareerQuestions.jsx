@@ -4,7 +4,7 @@ import API from "../services/api";
 import { useAuth }  from "../context/AuthContext";
 import Footer from "../components/Footer";
 
-const MAX_QUESTIONS = 15;
+const MAX_QUESTIONS = 16;
 
 // ── Motivational messages ─────────────────────────────────────
 const GENERIC_MESSAGES = [
@@ -410,7 +410,7 @@ export default function CareerQuestions() {
           const j = Math.floor(Math.random() * (i + 1));
           [pool[i], pool[j]] = [pool[j], pool[i]];
         }
-        const ordered = pool.slice(0, MAX_QUESTIONS);
+        const ordered = pool.slice(0, 12 + Math.floor(Math.random() * 5)); // 12–16 random questions
         setQuestions(ordered);
         setCurIdx(0);
         setCurrentQuestion(ordered[0] || null);
@@ -632,7 +632,7 @@ export default function CareerQuestions() {
   );
 
   // ── QUIZ ──────────────────────────────────────────────────────
-  const progress = Math.min((stepCount / MAX_QUESTIONS) * 100, 100);
+  const progress = Math.min((stepCount / (questions.length || MAX_QUESTIONS)) * 100, 100);
 
   return (
     <div style={pageWrap}>

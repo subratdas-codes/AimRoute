@@ -286,14 +286,26 @@ const Result = () => {
 
   const handleSave = () => { if (!user) { setShowGuestModal(true); return; } doSave(); };
   const handleDownload = () => { if (!user) { setShowGuestModal(true); return; } downloadCareerPDF(data); };
-  const doSave = async () => {
+  const doSave = async (rd = data) => {
+    if (saving) return;
     setSaving(true);
     try {
-      await API.post("/results/save", { level:data.level, top_career:data.top_careers[0].career, fit_label:data.top_careers[0].fit, dominant_category:data.dominant_category, percentage:data.percentage, reasons:data.reasons||[], all_careers:data.top_careers });
+      await API.post("/results/save", { level:rd.level, top_career:rd.top_careers[0].career, fit_label:rd.top_careers[0].fit, dominant_category:rd.dominant_category, percentage:rd.percentage, reasons:rd.reasons||[], all_careers:rd.top_careers });
+      localStorage.setItem("career_result_saved", "1");
       setSaved(true); setShowSuccess(true);
     } catch(err){ console.error("Save failed",err); }
     finally { setSaving(false); }
   };
+
+  // ── Auto-save + instant email once logged in ────────────────
+  useEffect(() => {
+    if (!user) return;
+    const stored = localStorage.getItem("career_result");
+    if (!stored) return;
+    if (localStorage.getItem("career_result_saved") === "1") { setSaved(true); return; }
+    doSave(JSON.parse(stored));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   if (!data) return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#fafafa"}}>
