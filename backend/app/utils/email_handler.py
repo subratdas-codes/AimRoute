@@ -263,7 +263,17 @@ def _probe(host, smtp_port, use_ssl, timeout=15):
 
 
 def diagnose_email(to: str = None):
+    pw = MAIL_PASSWORD
     results = {
+        "mail_config": {
+            "provider": EMAIL_PROVIDER or "smtp(gmail)",
+            "username": MAIL_USERNAME,
+            "password_set": bool(pw),
+            "password_length": len(pw),
+            "password_has_spaces": " " in pw,
+            "password_last4": pw[-4:] if pw else "(empty)",
+            "from": MAIL_FROM,
+        },
         "targets_tested_from_render": [
             "smtp.gmail.com:587 (STARTTLS)",
             "smtp.gmail.com:465 (SSL)",
