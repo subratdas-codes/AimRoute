@@ -10,6 +10,8 @@ const SUGGESTED_QUESTIONS = [
   "How to bridge my skill gap?",
 ];
 
+const HISTORY_KEY = "aimroute_chat_history";
+
 const ChatBot = () => {
   const [open, setOpen]         = useState(false);
   const [messages, setMessages] = useState([]);
@@ -17,6 +19,17 @@ const ChatBot = () => {
   const [loading, setLoading]   = useState(false);
   const [context, setContext]   = useState(null);
   const bottomRef               = useRef(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(HISTORY_KEY);
+      if (saved) setMessages(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(messages)); } catch {}
+  }, [messages]);
 
   useEffect(() => {
     const stored = localStorage.getItem("career_result");
@@ -61,7 +74,7 @@ const ChatBot = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.map(m => ({
+          messages: newMessages.slice(-12).map(m => ({
             role: m.role,
             content: m.content,
           })),
@@ -115,7 +128,16 @@ const ChatBot = () => {
               <p className="text-white font-bold text-sm">AimRoute AI</p>
               <p className="text-purple-200 text-xs">{getHeaderSubtitle()}</p>
             </div>
-            <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            {(messages.length > 0) && (
+              <button
+                onClick={() => { setMessages([]); localStorage.removeItem(HISTORY_KEY); }}
+                title="Start fresh chat"
+                className="ml-auto text-purple-200 hover:text-white bg-white/10 hover:bg-white/20 text-xs px-3 py-1.5 rounded-full transition flex-shrink-0"
+              >
+                ↺ New Chat
+              </button>
+            )}
+            {messages.length === 0 && <div className="ml-auto w-2 h-2 bg-green-400 rounded-full animate-pulse" />}
           </div>
 
           {/* Messages */}

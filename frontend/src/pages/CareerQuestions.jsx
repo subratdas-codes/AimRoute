@@ -1,7 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import API from "../services/api";
+import { useAuth }  from "../context/AuthContext";
 import Footer from "../components/Footer";
+
+const MAX_QUESTIONS = 15;
 
 // ── Motivational messages ─────────────────────────────────────
 const GENERIC_MESSAGES = [
@@ -372,7 +375,10 @@ function BgScene() {
 export default function CareerQuestions() {
   const { level: rawLevel } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const level = LEVEL_ALIAS[rawLevel] || rawLevel;
+
+  const answeredIds  = useRef(new Set());
 
   const [questions, setQuestions]                     = useState([]);
   const [curIdx, setCurIdx]                           = useState(0);
@@ -408,6 +414,7 @@ export default function CareerQuestions() {
           [rest[i], rest[j]] = [rest[j], rest[i]];
         }
         const ordered = start ? [start, ...rest] : rest;
+        answeredIds.current = new Set();
         setQuestions(ordered);
         setCurIdx(0);
         setCurrentQuestion(ordered[0]);
@@ -449,6 +456,23 @@ export default function CareerQuestions() {
         fit_label: data.fit_label, dominant_category: data.dominant_category,
         reasons: finalReasons, level, percentage: parseFloat(percentage) || 60,
       }));
+      localStorage.removeItem("career_result_saved");
+      if (user && data.top_careers && data.top_careers.length) {
+        try {
+          await API.post("/results/save", {
+            level,
+            top_career: data.top_careers[0].career,
+            fit_label: data.top_careers[0].fit,
+            dominant_category: data.dominant_category,
+            percentage: parseFloat(percentage) || 60,
+            reasons: finalReasons,
+            all_careers: data.top_careers,
+          });
+          localStorage.setItem("career_result_saved", "1");
+        } catch (saveErr) {
+          console.error("Auto-save result failed", saveErr);
+        }
+      }
       navigate("/result");
     } catch {
       setError("Something went wrong. Please try again.");
@@ -476,14 +500,24 @@ export default function CareerQuestions() {
       setScores(updatedScores);
       setReasons(updatedReasons);
       setStepCount(s => s + 1);
+      answeredIds.current.add(currentQuestion.id);
 
-      if (opt.next_question_id) {
-        const nq = questions.find(q => q.id === opt.next_question_id);
-        if (nq) { setCurIdx(questions.indexOf(nq)); setCurrentQuestion(nq); return; }
+      const asked = stepCount + 1;
+      const cap = Math.min(MAX_QUESTIONS, questions.length);
+      if (asked >= cap) {
+        submitToBackend(updatedScores, updatedReasons);
+        return;
       }
 
-      const nbo = questions[curIdx + 1];
-      if (nbo) { setCurIdx(curIdx + 1); setCurrentQuestion(nbo); return; }
+      let next = null;
+      const target = opt.next_question_id ? questions.find(q => q.id === opt.next_question_id) : null;
+      if (target && !answeredIds.current.has(target.id) && questions.indexOf(target) > curIdx) {
+        next = target;
+      } else {
+        next = questions.slice(curIdx + 1).find(q => !answeredIds.current.has(q.id)) || null;
+      }
+
+      if (next) { setCurIdx(questions.indexOf(next)); setCurrentQuestion(next); return; }
 
       submitToBackend(updatedScores, updatedReasons);
     }, 300);
@@ -613,7 +647,7 @@ export default function CareerQuestions() {
   );
 
   // ── QUIZ ──────────────────────────────────────────────────────
-  const progress = Math.min((stepCount / 9) * 100, 100);
+  const progress = Math.min((stepCount / MAX_QUESTIONS) * 100, 100);
 
   return (
     <div style={pageWrap}>

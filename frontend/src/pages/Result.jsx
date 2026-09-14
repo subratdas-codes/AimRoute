@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
 import confetti from "canvas-confetti";
 import Footer from "../components/Footer";
+import { downloadCareerPDF } from "../utils/careerReport";
 
 const INDIAN_STATES = [
   "All States","Andhra Pradesh","Assam","Bihar","Delhi","Gujarat","Haryana",
@@ -221,6 +222,7 @@ const Result = () => {
     const stored = localStorage.getItem("career_result");
     if (stored) {
       setData(JSON.parse(stored));
+      if (localStorage.getItem("career_result_saved") === "1") setSaved(true);
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioCtx();
@@ -280,6 +282,7 @@ const Result = () => {
   }, [colleges, collegeSearch]);
 
   const handleSave = () => { if (!user) { setShowGuestModal(true); return; } doSave(); };
+  const handleDownload = () => { if (!user) { setShowGuestModal(true); return; } downloadCareerPDF(data); };
   const doSave = async () => {
     setSaving(true);
     try {
@@ -579,6 +582,12 @@ const Result = () => {
               {saving?"Saving...":user?"Save My Result to Dashboard":"Login to Save Result"}
             </button>
           )}
+          <button onClick={handleDownload}
+            style={{width:"100%",padding:"16px",background:"white",border:"1.5px solid #e9d5ff",borderRadius:16,color:"#7c3aed",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#fdf4ff";e.currentTarget.style.boxShadow="0 4px 16px rgba(124,58,237,0.1)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="white";e.currentTarget.style.boxShadow="none";}}>
+            📄 {user ? "Download Result PDF" : "Login to Download Result PDF"}
+          </button>
           <button onClick={()=>{localStorage.removeItem("career_result");window.location.href="/career-path";}}
             style={{width:"100%",padding:"16px",background:"white",border:"1.5px solid #e9d5ff",borderRadius:16,color:"#7c3aed",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}
             onMouseEnter={e=>{e.currentTarget.style.background="#fdf4ff";e.currentTarget.style.boxShadow="0 4px 16px rgba(124,58,237,0.1)";}}

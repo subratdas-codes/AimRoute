@@ -29,13 +29,16 @@ You help with:
 - Navigating AimRoute features (quiz, results, dashboard, roadmap page)
 
 Rules:
-- Always relate answers to the student's level, percentage, and career match if provided in context
+- Always relate answers to the student's level, percentage, and career match if provided in the [Student profile] context
+- Keep exceptions of the [Student profile] context out of your reply — just use it to personalise
+- Keep replies SHORT and to the point: 2-4 sentences, under ~70 words, unless the user explicitly asks for a detailed breakdown
+- Lead with the direct answer first, then add one supporting point or example
 - Be encouraging but realistic — don't overpromise
-- Keep responses concise (3-6 sentences usually) unless a detailed breakdown is needed
 - Use simple English; avoid heavy jargon
-- If asked something unrelated to careers/education, politely redirect
+- If asked something unrelated to careers/education, politely redirect to AimRoute's quiz, roadmap, or college tools
 - Never mention that you are powered by Groq or Gemini or any third-party AI
-- Always present yourself as AimRoute's built-in AI assistant"""
+- Always present yourself as AimRoute's built-in AI assistant
+- Naturally mention AimRoute features (career quiz, roadmap, college finder, dashboard report PDF) when they genuinely help the question"""
 
 
 class Message(BaseModel):
@@ -70,7 +73,7 @@ async def call_groq(messages_payload: list, system: str) -> str:
     body = {
         "model": get_groq_model(),
         "messages": [{"role": "system", "content": system}] + messages_payload,
-        "max_tokens": 700,
+        "max_tokens": 300,
         "temperature": 0.7,
     }
     async with httpx.AsyncClient(timeout=20) as client:
@@ -108,7 +111,7 @@ async def call_openai(messages_payload: list, system: str) -> str:
     body = {
         "model": get_openai_model(),
         "messages": [{"role": "system", "content": system}] + messages_payload,
-        "max_tokens": 700,
+        "max_tokens": 300,
         "temperature": 0.7,
     }
     async with httpx.AsyncClient(timeout=20) as client:
@@ -156,11 +159,13 @@ async def chat_message(request: ChatRequest):
 
     context_prefix = build_context_prefix(request.context or {})
     messages_payload = []
+    last_user_idx = -1
     for i, msg in enumerate(request.messages):
-        content = msg.content
-        if i == 0 and msg.role == "user" and context_prefix:
-            content = context_prefix + content
-        messages_payload.append({"role": msg.role, "content": content})
+        if msg.role == "user":
+            last_user_idx = i
+        messages_payload.append({"role": msg.role, "content": msg.content})
+    if last_user_idx >= 0 and context_prefix:
+        messages_payload[last_user_idx]["content"] = context_prefix + messages_payload[last_user_idx]["content"]
 
     errors = []
 
