@@ -48,6 +48,12 @@ try:
 except Exception as e:
     print(f"Bootstrap skipped: {e}")
 
+try:
+    from app.utils.college_engine import warm_colleges
+    warm_colleges()
+except Exception as e:
+    print(f"College warm-up skipped: {e}")
+
 # ── Register ALL routers ──────────────────────────────────────
 app.include_router(auth_routes.router,      prefix="/auth",     tags=["Auth"])
 app.include_router(login_routes.router,     prefix="/auth",     tags=["Login"])
