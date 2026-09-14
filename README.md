@@ -29,49 +29,6 @@ AI-powered career guidance platform. Users answer a short interest quiz, get mat
 
 > Admin credentials are **not** committed to the repository. Set admin email(s) via `ADMIN_EMAILS` in the backend (see `.env.example` / Render env).
 
-## Architecture
-
-```
-                            ┌───────────────────────────┐
-                            │  Browser (React SPA)      │
-                            │  Vite + Tailwind          │
-        HTTPS + JWT Bearer   │  aimroute.vercel.app     │
-     ┌──────────────────────▶│  pages · components      │
-     │                       └────────────┬──────────────┘
-     │                                    │  REST / JSON
-┌────▼──────────────────────┐             ▼
-│  FastAPI  (backend)       │      ┌─────────────────────────────┐
-│  aimroute.onrender.com    │      │  Auth / Quiz / Results /     │
-│  ├─ auth (register,login, │      │  Dashboard / Admin APIs      │
-│  │   password reset)      │      │  ─ JWT validation middleware │
-│  ├─ quiz + ML scoring     │      │  ─ role guards (admin)       │
-│  ├─ college suggestions   │      │  ─ background email tasks    │
-│  ├─ careers / compare     │      └──────────────┬───────────────┘
-│  ├─ chat proxy            │                     │
-│  └─ admin panel APIs      │                     │
-└──────┬──────────┬─────────┘                     │
-       │          │                               │
-       ▼          ▼                               ▼
-┌────────────┐  ┌────────────────────┐   ┌──────────────────┐
-│  MySQL     │  │  ML career model   │   │  Groq · Gemini   │
-│  users ·   │  │  mlmodel/model.pkl │   │  chatbot +       │
-│  results · │  │  + colleges.csv    │   │  smart scoring   │
-│  activity  │  └────────────────────┘   └──────────────────┘
-└────────────┘            │
-                          ▼
-                 ┌────────────────────┐
-                 │  Gmail API (OAuth) │  result + reset emails
-                 └────────────────────┘
-```
-
-### Request lifecycle (quick example)
-1. User answers the level quiz → the SPA collects 12–15 answers with category tags.
-2. `POST /quiz/submit` → backend scores the tags, then the ML model (`model.pkl`) predicts the top careers and fit labels.
-3. Result is rendered with career cards, salary ranges, roadmap and a score ring; `GET /colleges/suggest` fetches filtered colleges using the user's level, score and dominant category.
-4. "Save result" → `POST /results/save` stores the result in MySQL, logs it to the activity table, and sends the result-summary email via the Gmail API.
-5. The personal dashboard reads back saved results (`GET /results/my`) and can delete/clear them.
-6. Admins manage everything through the protected `/admin/*` APIs from the React admin panel.
-
 ## Tech Stack
 - **Frontend:** React 19 + Vite + Tailwind (deployed on **Vercel** → `aimroute.vercel.app`)
 - **Backend:** FastAPI + SQLAlchemy (deployed on **Render** → `aimroute.onrender.com`)
