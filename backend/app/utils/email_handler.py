@@ -319,6 +319,7 @@ def _probe(host, smtp_port, use_ssl, timeout=15):
 def diagnose_email(to: str = None):
     pw = MAIL_PASSWORD
     client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
     refresh = os.getenv("GOOGLE_REFRESH_TOKEN", "")
     results = {
         "mail_config": {
@@ -331,6 +332,8 @@ def diagnose_email(to: str = None):
             "from": MAIL_FROM,
             "gmail_api_client_id_set": bool(client_id),
             "gmail_api_client_id_len": len(client_id),
+            "gmail_api_client_secret_set": bool(client_secret),
+            "gmail_api_client_secret_len": len(client_secret),
             "gmail_api_refresh_token_set": bool(refresh),
             "gmail_api_refresh_token_len": len(refresh),
         },
