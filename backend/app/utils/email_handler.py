@@ -7,14 +7,15 @@ from email.message import EmailMessage
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
-MAIL_USERNAME = "aimroute.noreply@gmail.com"
-MAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+MAIL_USERNAME = os.getenv("MAIL_USERNAME") or "aimroute.noreply@gmail.com"
+MAIL_PASSWORD = os.getenv("EMAIL_PASSWORD") or os.getenv("MAIL_PASSWORD") or ""
+MAIL_FROM = os.getenv("MAIL_FROM") or MAIL_USERNAME
 
 
 def _build_mime(to: str, subject: str, html: str):
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = f"AimRoute <{MAIL_USERNAME}>"
+    msg["From"] = f"AimRoute <{MAIL_FROM}>"
     msg["To"] = to
     msg["Reply-To"] = MAIL_USERNAME
     msg.set_content("Please view this email in an HTML-capable client.")
@@ -28,7 +29,7 @@ def _smtp_send(to: str, subject: str, html: str, seconds: float = 30):
         server.starttls()
         server.ehlo()
         server.login(MAIL_USERNAME, MAIL_PASSWORD)
-        server.send_message(_build_mime(to, subject, html), from_addr=MAIL_USERNAME, to_addr=[to])
+        server.send_message(_build_mime(to, subject, html), from_addr=MAIL_FROM, to_addr=[to])
 
 
 # ── Reset password email ───────────────────────────────────
@@ -156,61 +157,59 @@ def send_result_email_background(email: str, name: str, top_career: str, level: 
 
 
 # ── Step-by-step diagnostic (for debugging SMTP issues) ────
-def diagnose_email(to: str = None):
+def _probe(host, smtp_port, use_ssl, timeout=15):
+    import ssl
     results = {}
-
     try:
-        infos = socket.getaddrinfo(SMTP_HOST, SMTP_PORT, socket.AF_INET, socket.SOCK_STREAM)
+        infos = socket.getaddrinfo(host, smtp_port, socket.AF_INET, socket.SOCK_STREAM)
         results["dns"] = f"OK -> {infos[0][4][0]}"
     except Exception as e:
         results["dns"] = f"FAIL: {type(e).__name__}: {e}"
         return results
-
     server = None
     try:
-        server = smtplib.SMTP(timeout=20)
-        server.connect(SMTP_HOST, SMTP_PORT)
-        results["connect"] = "OK"
+        if use_ssl:
+            server = smtplib.SMTP_SSL(host, smtp_port, timeout=timeout, context=ssl.create_default_context())
+            code, _ = server.ehlo()
+            results["connect"] = f"OK (SSL, ehlo {code})"
+        else:
+            server = smtplib.SMTP(timeout=timeout)
+            server.connect(host, smtp_port)
+            results["connect"] = "OK"
+            code, _ = server.ehlo()
+            results["ehlo"] = f"OK ({code})"
+            code, _ = server.starttls()
+            results["starttls"] = f"OK ({code})"
+            server.ehlo()
     except Exception as e:
         results["connect"] = f"FAIL: {type(e).__name__}: {e}"
         return results
-
-    try:
-        code, _ = server.ehlo()
-        results["ehlo"] = f"OK ({code})"
-    except Exception as e:
-        results["ehlo"] = f"FAIL: {type(e).__name__}: {e}"
-        return results
-
-    try:
-        code, _ = server.starttls()
-        results["starttls"] = f"OK ({code})"
-        server.ehlo()
-    except Exception as e:
-        results["starttls"] = f"FAIL: {type(e).__name__}: {e}"
-        return results
-
-    try:
-        server.login(MAIL_USERNAME, MAIL_PASSWORD)
-        results["login"] = "OK"
-    except Exception as e:
-        results["login"] = f"FAIL: {type(e).__name__}: {e}"
-        results["login_hint"] = "Check EMAIL_PASSWORD env var (16-char App Password, no spaces) and that 2-Step Verification is ON for the gmail account."
-        try:
-            server.quit()
-        except Exception:
-            pass
-        return results
-
-    if to:
-        try:
-            server.send_message(_build_mime(to, "AimRoute email diagnostic", "<p>AimRoute diagnostic test email.</p>"), from_addr=MAIL_USERNAME, to_addr=[to])
-            results["send_to"] = f"OK -> {to}"
-        except Exception as e:
-            results["send_to"] = f"FAIL: {type(e).__name__}: {e}"
-
     try:
         server.quit()
     except Exception:
         pass
+    return results
+
+
+def diagnose_email(to: str = None):
+    results = {
+        "targets_tested_from_render": [
+            "smtp.gmail.com:587 (STARTTLS)",
+            "smtp.gmail.com:465 (SSL)",
+            "smtp-relay.brevo.com:587",
+            "smtp.sendgrid.net:587",
+            "smtp.mailgun.org:587",
+        ]
+    }
+    results["smtp.gmail.com:587"] = _probe("smtp.gmail.com", 587, use_ssl=False)
+    results["smtp.gmail.com:465"] = _probe("smtp.gmail.com", 465, use_ssl=True)
+    results["smtp-relay.brevo.com:587"] = _probe("smtp-relay.brevo.com", 587, use_ssl=False)
+    results["smtp.sendgrid.net:587"] = _probe("smtp.sendgrid.net", 587, use_ssl=False)
+    results["smtp.mailgun.org:587"] = _probe("smtp.mailgun.org", 587, use_ssl=False)
+
+    google = results["smtp.gmail.com:465"].get("connect", "")
+    if "FAIL" in google and "Network is unreachable" in google:
+        results["verdict"] = ("Render's free tier blocks outbound SMTP to Gmail at the network layer. "
+                              "No SMTP config (Gmail or any relay) will work from Render's free tier. "
+                              "Fix: use an HTTPS email API (port 443) OR upgrade Render to a paid instance.")
     return results
