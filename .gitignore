@@ -206,3 +206,7 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 b
+# Node.js / build output
+node_modules/
+dist/
+*.log
