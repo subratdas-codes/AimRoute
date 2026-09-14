@@ -12,6 +12,9 @@ if DATABASE_URL:
     DATABASE_URL = DATABASE_URL.strip().strip('"')
     if DATABASE_URL.startswith("mysql"):
         DATABASE_URL = "mysql+pymysql://" + DATABASE_URL.split("://", 1)[1]
+    if "?" in DATABASE_URL:
+        # pymysql doesn't understand mysql-connector query flags like ssl-mode=REQUIRED
+        DATABASE_URL = DATABASE_URL.split("?", 1)[0]
 else:
     DB_HOST = os.getenv("MYSQL_HOST", "localhost")
     DB_PORT = os.getenv("MYSQL_PORT", "3306")
