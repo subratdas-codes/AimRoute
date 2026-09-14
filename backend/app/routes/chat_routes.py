@@ -12,8 +12,10 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 # ← Read keys + model names inside functions, not at module level
 def get_groq_key():    return os.getenv("GROQ_API_KEY", "")
 def get_gemini_key():  return os.getenv("GEMINI_API_KEY", "")
-def get_groq_model():  return os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-def get_gemini_model(): return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+def get_openai_key():  return os.getenv("OPENAI_API_KEY", "")
+def get_groq_model():    return os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+def get_gemini_model():  return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+def get_openai_model():  return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 SYSTEM_PROMPT = """You are AimRoute's AI career counselor — a warm, knowledgeable guide helping Indian students (10th to PG level) make smart career decisions.
 
@@ -99,15 +101,58 @@ async def call_gemini(messages_payload: list, system: str) -> str:
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
+async def call_openai(messages_payload: list, system: str) -> str:
+    key = get_openai_key()
+    if not key:
+        raise RuntimeError("No OpenAI key configured")
+    body = {
+        "model": get_openai_model(),
+        "messages": [{"role": "system", "content": system}] + messages_payload,
+        "max_tokens": 700,
+        "temperature": 0.7,
+    }
+    async with httpx.AsyncClient(timeout=20) as client:
+        res = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            json=body,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        )
+        res.raise_for_status()
+        data = res.json()
+        return data["choices"][0]["message"]["content"].strip()
+
+
+def fallback_reply(context: dict) -> str:
+    level = (context.get("level") or "12th").lower()
+    category = (context.get("dominant_category") or "General").lower()
+
+    intro = "I couldn't reach the AI service just now, so here's expert guidance from AimRoute:"
+
+    level_tips = {
+        "10th": "After Class 10, your next big choice is the stream in Class 11-12. Pick based on interest, not peer pressure.",
+        "12th": "Focus on your entrance exams (JEE / NEET / CUET / CLAT / NID) and keep your board percentage high — it decides college quality.",
+        "grad": "Build a strong portfolio, internships and projects now. Your degree matters less than your skills and experience.",
+        "pg": "Specialise deeply and target industry or research goals. Networking and published work open the best doors.",
+    }
+    category_tips = {
+        "technology": "For tech careers: master fundamentals (algorithms, one strong language), build 2-4 real projects, and practise DSA for interviews. AI/ML, full-stack and cloud are in high demand.",
+        "healthcare": "For healthcare careers: a strong NEET rank or allied-health course (nursing, pharmacy, physiotherapy) gives stable, meaningful careers. Keep a backup plan below your dream college.",
+        "business": "For business careers: internships, communication skills and understanding of the market matter most. CA/MBA/startups are all strong if you build consistent execution habits.",
+        "creative": "For creative careers: build a visible portfolio across design, writing, film or performance. Consistency and personal projects beat certificates.",
+        "science": "For science careers: choose a research or application focus early. Practical lab skills and published work build the strongest profiles.",
+    }
+
+    starter = level_tips.get(level, level_tips["12th"])
+    cat = category_tips.get(category, "Focus on your strengths and keep a realistic backup plan while chasing your dream career.")
+
+    return f"{intro}\n\n{starter}\n\n{cat}\n\nTry me again shortly — once the AI service is back you'll get fully personalised answers."
+
+
 @router.post("/message")
 async def chat_message(request: ChatRequest):
     groq_key = get_groq_key()
     gemini_key = get_gemini_key()
-
-    print(f"[Chat] Groq key present: {bool(groq_key)}, Gemini key present: {bool(gemini_key)}")
-
-    if not groq_key and not gemini_key:
-        raise HTTPException(status_code=500, detail="No AI API keys configured.")
+    openai_key = get_openai_key()
 
     context_prefix = build_context_prefix(request.context or {})
     messages_payload = []
@@ -117,19 +162,27 @@ async def chat_message(request: ChatRequest):
             content = context_prefix + content
         messages_payload.append({"role": msg.role, "content": content})
 
+    errors = []
+
     if groq_key:
         try:
-            reply = await call_groq(messages_payload, SYSTEM_PROMPT)
-            return {"reply": reply}
+            return {"reply": await call_groq(messages_payload, SYSTEM_PROMPT)}
         except Exception as e:
-            print(f"[Groq failed] {e} — trying Gemini fallback")
+            errors.append(f"Groq: {e}")
+
+    if openai_key:
+        try:
+            return {"reply": await call_openai(messages_payload, SYSTEM_PROMPT)}
+        except Exception as e:
+            errors.append(f"OpenAI: {e}")
 
     if gemini_key:
         try:
-            reply = await call_gemini(messages_payload, SYSTEM_PROMPT)
-            return {"reply": reply}
+            return {"reply": await call_gemini(messages_payload, SYSTEM_PROMPT)}
         except Exception as e:
-            print(f"[Gemini failed] {e}")
-            raise HTTPException(status_code=500, detail="Both AI providers failed. Please try again.")
+            errors.append(f"Gemini: {e}")
 
-    raise HTTPException(status_code=500, detail="No working AI provider available.")
+    if errors:
+        print(f"[Chat] All AI providers failed: {'; '.join(errors)}")
+
+    return {"reply": fallback_reply(request.context or {})}
