@@ -75,7 +75,9 @@ async def save_result(
             )
             print(f"[Email] result email SENT to {current_user}")
         except Exception as e:
-            print(f"[Email] result email send failed for {current_user}: {e}")
+            print(f"[Email] result email send failed for {current_user}: {type(e).__name__}: {e}")
+            import traceback
+            print(traceback.format_exc())
 
     background_tasks.add_task(_send_result_email_safe)
 

@@ -1,6 +1,7 @@
 import os
 import asyncio
 import threading
+import traceback
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 
@@ -42,7 +43,7 @@ async def send_reset_email(email: str, reset_link: str):
     await fm.send_message(message)
 
 
-async def _send_with_timeout(coro, seconds: float = 15):
+async def _send_with_timeout(coro, seconds: float = 30):
     return await asyncio.wait_for(coro, timeout=seconds)
 
 
@@ -53,7 +54,8 @@ def send_reset_email_background(email: str, reset_link: str):
             asyncio.run(_send_with_timeout(send_reset_email(email, reset_link)))
             print(f"[Email] reset email SENT to {email}")
         except Exception as e:
-            print(f"[Email] background reset-email send failed for {email}: {e}")
+            print(f"[Email] background reset-email send failed for {email}: {type(e).__name__}: {e}")
+            print(traceback.format_exc())
     threading.Thread(target=_run, daemon=True).start()
 
 
