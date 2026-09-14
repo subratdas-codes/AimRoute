@@ -189,7 +189,6 @@ const CongratsOverlay = ({ onClose, closing }) => (
         onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
         View My Results →
       </button>
-      <p style={{fontSize:11,color:"#d1d5db",marginTop:12}}>Auto-closing in a moment...</p>
       <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#7c3aed,#e91e8c,#7c3aed)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
     </div>
   </div>
@@ -239,14 +238,13 @@ const Result = () => {
         playNote(1047,0.54,0.35); playNote(880,0.72,0.18); playNote(1047,0.90,0.45);
       } catch(e) {}
       setShowCongrats(true);
-      const dismissTimer = setTimeout(() => { setCongratsOut(true); setTimeout(() => setShowCongrats(false), 400); }, 3200);
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
       const end = Date.now() + 2000;
       const interval = setInterval(() => {
         if (Date.now() > end) return clearInterval(interval);
         confetti({ particleCount: 20, spread: 60, origin: { y: Math.random() - 0.2 } });
       }, 250);
-      return () => { clearInterval(interval); clearTimeout(dismissTimer); };
+      return () => { clearInterval(interval); };
     }
   }, []);
 

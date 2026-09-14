@@ -96,6 +96,11 @@ const Icon = ({ name }) => {
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
       </svg>
     ),
+    refresh: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+    ),
   };
   return icons[name] || null;
 };
@@ -116,7 +121,7 @@ const Modal = ({ title, onClose, children }) => (
 );
 
 // ─── Confirm Dialog ───────────────────────────────────────────────────────────
-const Confirm = ({ message, onConfirm, onCancel }) => (
+const Confirm = ({ message, onConfirm, onCancel, confirmText = "Delete" }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center">
       <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,7 +133,7 @@ const Confirm = ({ message, onConfirm, onCancel }) => (
           Cancel
         </button>
         <button onClick={onConfirm} className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600">
-          Delete
+          {confirmText}
         </button>
       </div>
     </div>
@@ -200,13 +205,30 @@ const levelLabel = { "10th": "After 10th", "12th": "After 12th", grad: "After Gr
 const DashboardSection = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
+    setLoading(true);
     adminService.getAdminStats()
       .then(r => setStats(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  const handleResetAll = async () => {
+    setResetting(true);
+    try {
+      const r = await adminService.resetAllData();
+      setConfirmReset(false);
+      loadStats();
+    } catch {
+    } finally {
+      setResetting(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-20 text-gray-400">Loading stats...</div>;
 
@@ -272,6 +294,31 @@ const DashboardSection = () => {
           ))}
         </div>
       </div>
+
+      {/* Danger zone — Reset App Data */}
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-red-200/70 p-6">
+        <h3 className="font-bold text-red-600 mb-1">Reset App Data</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Permanently delete every user's quiz results and activity logs.
+          User accounts, questions and colleges are kept.
+        </p>
+        <button
+          onClick={() => setConfirmReset(true)}
+          disabled={resetting}
+          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+        >
+          <Icon name="refresh" /> {resetting ? "Resetting..." : "Reset All Results & Activity"}
+        </button>
+      </div>
+
+      {confirmReset && (
+        <Confirm
+          message="Reset ALL results and activity? This cannot be undone."
+          confirmText="Reset All"
+          onConfirm={handleResetAll}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
     </div>
   );
 };
@@ -336,6 +383,17 @@ const UsersSection = ({ showToast }) => {
       load();
     } catch (e) {
       showToast("Error deleting user", "error");
+    }
+  };
+
+  const handleResetUser = async (id) => {
+    try {
+      await adminService.resetUserData(id);
+      showToast("User data reset!", "success");
+      setConfirm(null);
+      load();
+    } catch (e) {
+      showToast(e.response?.data?.detail || "Error resetting user data", "error");
     }
   };
 
@@ -441,7 +499,11 @@ const UsersSection = ({ showToast }) => {
                       className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500" title="Edit">
                       <Icon name="edit" />
                     </button>
-                    <button onClick={() => setConfirm({ id: u.id, label: u.name })}
+                    <button onClick={() => setConfirm({ type: "reset", id: u.id, label: u.name })}
+                      className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500" title="Reset user data (results + activity)">
+                      <Icon name="refresh" />
+                    </button>
+                    <button onClick={() => setConfirm({ type: "delete", id: u.id, label: u.name })}
                       className="p-1.5 rounded-lg hover:bg-red-50 text-red-400" title="Delete">
                       <Icon name="trash" />
                     </button>
@@ -570,8 +632,9 @@ const UsersSection = ({ showToast }) => {
 
       {confirm && (
         <Confirm
-          message={`Delete user "${confirm.label}"? All their results will also be deleted.`}
-          onConfirm={() => handleDelete(confirm.id)}
+          message={confirm.type === "reset" ? `Reset all results and activity for "${confirm.label}"?` : `Delete user "${confirm.label}"? All their results will also be deleted.`}
+          confirmText={confirm.type === "reset" ? "Reset" : "Delete"}
+          onConfirm={() => confirm.type === "reset" ? handleResetUser(confirm.id) : handleDelete(confirm.id)}
           onCancel={() => setConfirm(null)}
         />
       )}

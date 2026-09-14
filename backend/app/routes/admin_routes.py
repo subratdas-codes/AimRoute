@@ -233,6 +233,29 @@ def list_activity(
     ]
 
 
+@router.post("/reset")
+def reset_all_data(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    db.query(Result).delete()
+    db.query(UserActivity).delete()
+    db.commit()
+    print(f"[Admin] {admin} reset all results and activity")
+    log_activity(db, "system", "reset", "Admin reset all results and activity")
+    return {"message": "All results and activity cleared"}
+
+
+@router.post("/users/{user_id}/reset")
+def reset_user_data(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.query(Result).filter(Result.user_email == user.email).delete()
+    db.query(UserActivity).filter(UserActivity.email == user.email).delete()
+    db.commit()
+    print(f"[Admin] {admin} reset data for {user.email}")
+    log_activity(db, user.email, "reset", "User data reset by admin")
+    return {"message": f"Results and activity for {user.email} cleared"}
+
+
 @router.post("/users")
 def create_user(body: UserCreate, db: Session = Depends(get_db), admin=Depends(require_admin)):
     existing = db.query(User).filter(User.email == body.email).first()

@@ -624,6 +624,11 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
+              <button onClick={() => handleDelete(history.map(r => r.id))}
+                disabled={history.length === 0}
+                className="px-5 py-2.5 border border-red-200 bg-white text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                🗑️ Reset History
+              </button>
               <button onClick={() => navigate("/settings")}
                 className="px-5 py-2.5 border border-purple-200 bg-white text-purple-700 rounded-xl text-sm font-semibold hover:bg-purple-50 transition-colors">
                 🔑 Reset Password

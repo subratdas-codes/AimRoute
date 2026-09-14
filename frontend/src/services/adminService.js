@@ -3,6 +3,10 @@ import api from "./api";
 // ─── Stats ───────────────────────────────────────────────────────────────────
 export const getAdminStats = () => api.get("/admin/stats");
 
+// ─── Reset ───────────────────────────────────────────────────────────────────
+export const resetAllData = () => api.post("/admin/reset");
+export const resetUserData = (id) => api.post(`/admin/users/${id}/reset`);
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 export const getUsers = (params) => api.get("/admin/users", { params });
 export const getUser = (id) => api.get(`/admin/users/${id}`);

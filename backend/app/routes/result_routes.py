@@ -1,7 +1,7 @@
 import json
 import os
 import asyncio
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
@@ -84,6 +84,35 @@ async def save_result(
     background_tasks.add_task(_send_result_email_safe)
 
     return {"message": "Result saved successfully", "id": result.id}
+
+
+# ── Delete a single result (owner only) ──────────────────────
+@router.delete("/{result_id}")
+def delete_my_result(
+    result_id: int,
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    r = db.query(Result).filter(
+        Result.id == result_id,
+        Result.user_email == current_user,
+    ).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="Result not found")
+    db.delete(r)
+    db.commit()
+    return {"message": "Result deleted"}
+
+
+# ── Clear ALL of the user's results ───────────────────────────
+@router.delete("/clear")
+def clear_my_results(
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.query(Result).filter(Result.user_email == current_user).delete()
+    db.commit()
+    return {"message": "All results cleared"}
 
 
 # ── Get all results for logged-in user ────────────────────────

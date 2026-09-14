@@ -25,6 +25,7 @@ import AdminLogin      from "./pages/AdminLogin";
 import Compare from "./pages/Compare";
 
 const ADMIN_ROUTES = ["/admin", "/admin-login"];
+const AUTH_ROUTES   = ["/login", "/signup"];
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ function ProtectedRoute({ children }) {
 function App() {
   const location = useLocation();
   const isAdminRoute = ADMIN_ROUTES.some(path => location.pathname.startsWith(path));
+  const isAuthRoute  = AUTH_ROUTES.some(path => location.pathname === path);
 
   return (
     <>
@@ -68,7 +70,7 @@ function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isAdminRoute && <ChatBot />}
+      {!isAdminRoute && !isAuthRoute && <ChatBot />}
     </>
   );
 }

@@ -378,8 +378,6 @@ export default function CareerQuestions() {
   const { user } = useAuth();
   const level = LEVEL_ALIAS[rawLevel] || rawLevel;
 
-  const answeredIds  = useRef(new Set());
-
   const [questions, setQuestions]                     = useState([]);
   const [curIdx, setCurIdx]                           = useState(0);
   const [currentQuestion, setCurrentQuestion]         = useState(null);
@@ -406,18 +404,16 @@ export default function CareerQuestions() {
   useEffect(() => {
     API.get(`/quiz/?level=${level}`)
       .then(r => {
-        const allQ = r.data.questions || r.data;
-        const start = allQ.find(q => q.is_start) || allQ[0];
-        const rest = allQ.filter(q => q.id !== (start && start.id));
-        for (let i = rest.length - 1; i > 0; i--) {
+        const allQ  = r.data.questions || r.data;
+        const pool  = allQ.filter(q => !q.is_start);
+        for (let i = pool.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [rest[i], rest[j]] = [rest[j], rest[i]];
+          [pool[i], pool[j]] = [pool[j], pool[i]];
         }
-        const ordered = start ? [start, ...rest] : rest;
-        answeredIds.current = new Set();
+        const ordered = pool.slice(0, MAX_QUESTIONS);
         setQuestions(ordered);
         setCurIdx(0);
-        setCurrentQuestion(ordered[0]);
+        setCurrentQuestion(ordered[0] || null);
         setLoading(false);
       })
       .catch(() => { setError("Failed to load questions."); setLoading(false); });
@@ -500,26 +496,15 @@ export default function CareerQuestions() {
       setScores(updatedScores);
       setReasons(updatedReasons);
       setStepCount(s => s + 1);
-      answeredIds.current.add(currentQuestion.id);
 
-      const asked = stepCount + 1;
-      const cap = Math.min(MAX_QUESTIONS, questions.length);
-      if (asked >= cap) {
+      const nextIndex = curIdx + 1;
+      if (nextIndex >= questions.length) {
         submitToBackend(updatedScores, updatedReasons);
         return;
       }
 
-      let next = null;
-      const target = opt.next_question_id ? questions.find(q => q.id === opt.next_question_id) : null;
-      if (target && !answeredIds.current.has(target.id) && questions.indexOf(target) > curIdx) {
-        next = target;
-      } else {
-        next = questions.slice(curIdx + 1).find(q => !answeredIds.current.has(q.id)) || null;
-      }
-
-      if (next) { setCurIdx(questions.indexOf(next)); setCurrentQuestion(next); return; }
-
-      submitToBackend(updatedScores, updatedReasons);
+      setCurIdx(nextIndex);
+      setCurrentQuestion(questions[nextIndex]);
     }, 300);
   };
 
