@@ -6,9 +6,6 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-from app.database.connection import engine
-from app.database.base import Base
-
 from app.models import user_model, question_model, result_model, college_model
 
 from app.routes import auth_routes
@@ -46,10 +43,10 @@ app.add_middleware(
 )
 
 try:
-    Base.metadata.create_all(bind=engine)
-    print("Database tables ready")
+    from app.utils.bootstrap import run_bootstrap
+    run_bootstrap()
 except Exception as e:
-    print(f"Database unavailable at startup (API still booting): {e}")
+    print(f"Bootstrap skipped: {e}")
 
 # ── Register ALL routers ──────────────────────────────────────
 app.include_router(auth_routes.router,      prefix="/auth",     tags=["Auth"])

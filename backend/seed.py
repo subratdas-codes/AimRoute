@@ -5,9 +5,15 @@ from app.models.question_model import Question, QuestionOption
 from app.models import user_model, result_model, question_model
 
 Base.metadata.create_all(bind=engine)
-db = SessionLocal()
 
-def seed_questions():
+
+def _session():
+    return SessionLocal()
+
+
+def seed_questions(db=None):
+    if db is None:
+        db = _session()
     db.query(QuestionOption).delete()
     db.query(Question).delete()
     db.commit()
@@ -783,11 +789,14 @@ def seed_questions():
             db.add(option)
 
     db.commit()
-    print(f"✅ Questions seeded — {len(questions_data)} questions across 4 levels")
-    print("✅ Each student gets 9-10 questions personalised to their answers")
+    print(f"Questions seeded - {len(questions_data)} questions across 4 levels")
+    print("Each student gets 9-10 questions personalised to their answers")
 
 if __name__ == "__main__":
-    print("🌱 Seeding questions...")
-    seed_questions()
-    db.close()
-    print("🎉 Done!")
+    print("Seeding questions...")
+    db = _session()
+    try:
+        seed_questions(db)
+    finally:
+        db.close()
+    print("Done!")
