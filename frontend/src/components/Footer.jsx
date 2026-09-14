@@ -125,9 +125,9 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             {[
-              { label: "Privacy Policy",   path: "/" },
-              { label: "Terms of Service", path: "/" },
-              { label: "Contact Us",       path: "/" },
+              { label: "Privacy Policy",   path: "/privacy" },
+              { label: "Terms of Service", path: "/terms" },
+              { label: "Contact Us",       path: "/contact" },
             ].map((item) => (
               <button key={item.label}
                 onClick={() => navigate(item.path)}

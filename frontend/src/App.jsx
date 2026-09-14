@@ -16,6 +16,9 @@ import CareerQuestions from "./pages/CareerQuestions";
 import Services        from "./pages/Services";
 import ResetPassword   from "./pages/ResetPassword";
 import Settings        from "./pages/Settings";
+import Privacy         from "./pages/Privacy";
+import Terms           from "./pages/Terms";
+import Contact         from "./pages/Contact";
 
 import AdminPanel      from "./pages/AdminPanel";
 import AdminLogin      from "./pages/AdminLogin";
@@ -49,6 +52,9 @@ function App() {
         <Route path="/roadmap"            element={<Roadmap />} />
         <Route path="/quiz"               element={<Quiz />} />
         <Route path="/reset-password"     element={<ResetPassword />} />
+        <Route path="/privacy"            element={<Privacy />} />
+        <Route path="/terms"              element={<Terms />} />
+        <Route path="/contact"            element={<Contact />} />
         <Route path="/compare" element={<Compare />} />
 
         {/* Protected */}

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from datetime import datetime
 from app.database.base import Base
 
 class User(Base):
@@ -8,3 +9,6 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password = Column(String(255), nullable=False)
+    is_banned = Column(Boolean, nullable=False, default=False)
+    last_login = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

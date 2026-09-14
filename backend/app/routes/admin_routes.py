@@ -10,8 +10,10 @@ from app.models.user_model import User
 from app.models.question_model import Question, QuestionOption
 from app.models.result_model import Result
 from app.models.college_model import College
+from app.models.activity_model import UserActivity
 from app.utils.dependencies import get_current_user
 from app.utils.hash import hash_password
+from app.utils.activity import log_activity
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -33,6 +35,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    is_banned: Optional[bool] = None
 
 class UserCreate(BaseModel):
     name: str
@@ -119,6 +122,7 @@ def get_admin_stats(db: Session = Depends(get_db), admin=Depends(require_admin))
 
     return {
         "total_users": total_users,
+        "banned_users": db.query(func.count(User.id)).filter(User.is_banned == True, User.email.notin_(ADMIN_EMAILS)).scalar(),
         "total_results": total_results,
         "total_questions": total_questions,
         "total_colleges": total_colleges,
@@ -147,7 +151,15 @@ def list_users(
     users = query.order_by(desc(User.id)).offset(skip).limit(limit).all()
     return {
         "total": total,
-        "users": [{"id": u.id, "name": u.name, "email": u.email} for u in users]
+        "users": [
+            {
+                "id": u.id, "name": u.name, "email": u.email,
+                "is_banned": bool(u.is_banned),
+                "last_login": str(u.last_login) if u.last_login else None,
+                "created_at": str(u.created_at) if u.created_at else None,
+            }
+            for u in users
+        ]
     }
 
 
@@ -157,18 +169,65 @@ def get_user(user_id: int, db: Session = Depends(get_db), admin=Depends(require_
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     results = db.query(Result).filter(Result.user_email == user.email).all()
+    activity = (
+        db.query(UserActivity)
+        .filter(UserActivity.email == user.email)
+        .order_by(desc(UserActivity.id))
+        .limit(20)
+        .all()
+    )
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
+        "is_banned": bool(user.is_banned),
+        "last_login": str(user.last_login) if user.last_login else None,
+        "created_at": str(user.created_at) if user.created_at else None,
+        "password_hash": user.password,
         "total_attempts": len(results),
         "results": [
             {"id": r.id, "level": r.level, "top_career": r.top_career,
              "fit_label": r.fit_label, "percentage": r.percentage,
              "created_at": str(r.created_at)}
             for r in results
+        ],
+        "activity": [
+            {"id": a.id, "action": a.action, "detail": a.detail, "created_at": str(a.created_at)}
+            for a in activity
         ]
     }
+
+
+@router.get("/users/{user_id}/activity")
+def get_user_activity(user_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    activity = (
+        db.query(UserActivity)
+        .filter(UserActivity.email == user.email)
+        .order_by(desc(UserActivity.id))
+        .limit(50)
+        .all()
+    )
+    return [
+        {"id": a.id, "action": a.action, "detail": a.detail, "created_at": str(a.created_at)}
+        for a in activity
+    ]
+
+
+@router.get("/activity")
+def list_activity(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin)
+):
+    activity = db.query(UserActivity).order_by(desc(UserActivity.id)).limit(limit).all()
+    return [
+        {"id": a.id, "email": a.email, "action": a.action, "detail": a.detail,
+         "created_at": str(a.created_at)}
+        for a in activity
+    ]
 
 
 @router.post("/users")
@@ -180,6 +239,7 @@ def create_user(body: UserCreate, db: Session = Depends(get_db), admin=Depends(r
     db.add(user)
     db.commit()
     db.refresh(user)
+    log_activity(db, user.email, "register", "Account created by admin")
     return {"id": user.id, "name": user.name, "email": user.email}
 
 
@@ -194,8 +254,13 @@ def update_user(user_id: int, body: UserUpdate, db: Session = Depends(get_db), a
         user.email = body.email
     if body.password:
         user.password = hash_password(body.password)
+    if body.is_banned is not None and body.is_banned != user.is_banned:
+        user.is_banned = body.is_banned
+        log_activity(db, user.email, "ban" if body.is_banned else "unban",
+                     "Banned by admin" if body.is_banned else "Unbanned by admin")
     db.commit()
-    return {"id": user.id, "name": user.name, "email": user.email}
+    return {"id": user.id, "name": user.name, "email": user.email,
+            "is_banned": bool(user.is_banned), "last_login": str(user.last_login) if user.last_login else None}
 
 
 @router.delete("/users/{user_id}")
@@ -203,6 +268,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), admin=Depends(requi
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    log_activity(db, user.email, "deleted", "Account deleted by admin")
     db.query(Result).filter(Result.user_email == user.email).delete()
     db.delete(user)
     db.commit()

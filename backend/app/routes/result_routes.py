@@ -9,6 +9,7 @@ from app.models.result_model import Result
 from app.models.user_model import User
 from app.utils.dependencies import get_current_user
 from app.utils.email_handler import send_result_email
+from app.utils.activity import log_activity
 
 router = APIRouter(prefix="/results", tags=["Results"])
 
@@ -56,6 +57,7 @@ async def save_result(
     db.add(result)
     db.commit()
     db.refresh(result)
+    log_activity(db, current_user, "quiz_saved", f"{body.level} · {body.top_career}")
 
     # Get user's name from DB
     user = db.query(User).filter(User.email == current_user).first()

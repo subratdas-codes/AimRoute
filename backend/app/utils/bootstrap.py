@@ -56,6 +56,34 @@ def ensure_admin_user():
         db.close()
 
 
+def migrate_user_columns():
+    from sqlalchemy import text
+
+    db = SessionLocal()
+    try:
+        if engine.dialect.name.startswith("mysql"):
+            rows = db.execute(text("SHOW COLUMNS FROM users")).fetchall()
+            existing = {r[0] for r in rows}
+        else:
+            rows = db.execute(text("PRAGMA table_info(users)")).fetchall()
+            existing = {r[1] for r in rows}
+
+        if "is_banned" not in existing:
+            db.execute(text("ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT 0"))
+        if "last_login" not in existing:
+            db.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME NULL"))
+        if "created_at" not in existing:
+            db.execute(text("ALTER TABLE users ADD COLUMN created_at DATETIME NULL"))
+
+        db.commit()
+        print("Migration: users table columns ready")
+    except Exception as e:
+        print(f"Migration: skipped ({e})")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def run_bootstrap():
     try:
         Base.metadata.create_all(bind=engine)
@@ -66,3 +94,4 @@ def run_bootstrap():
 
     seed_questions_if_empty()
     ensure_admin_user()
+    migrate_user_columns()

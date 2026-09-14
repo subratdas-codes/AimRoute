@@ -5,6 +5,7 @@ from app.models.user_model import User
 from app.schemas.user_schema import UserCreate
 from app.utils.hash import hash_password, verify_password
 from app.utils.email_handler import send_reset_email_background
+from app.utils.activity import log_activity
 from app.utils.dependencies import get_current_user
 from pydantic import BaseModel, EmailStr
 import secrets
@@ -38,6 +39,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    log_activity(db, new_user.email, "register", "Account created")
     return {"message": "User registered successfully"}
 
 

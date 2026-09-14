@@ -79,6 +79,18 @@ const Icon = ({ name }) => {
         <circle cx="12" cy="12" r="3"/>
       </svg>
     ),
+    ban: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      </svg>
+    ),
+    unban: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    ),
   };
   return icons[name] || null;
 };
@@ -86,10 +98,10 @@ const Icon = ({ name }) => {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const Modal = ({ title, onClose, children }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between p-6 border-b border-purple-100/60 bg-gradient-to-r from-purple-50/50 to-indigo-50/50">
         <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-purple-100 text-gray-500">
           <Icon name="close" />
         </button>
       </div>
@@ -101,7 +113,7 @@ const Modal = ({ title, onClose, children }) => (
 // ─── Confirm Dialog ───────────────────────────────────────────────────────────
 const Confirm = ({ message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center">
       <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <Icon name="trash" />
       </div>
@@ -128,12 +140,12 @@ const Toast = ({ msg, type }) => (
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 const StatCard = ({ label, value, color, icon }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
+  <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-5 flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
       <Icon name={icon} />
     </div>
     <div>
-      <p className="text-2xl font-bold text-gray-900">{value ?? "—"}</p>
+      <p className="text-2xl font-extrabold text-gray-900">{value ?? "—"}</p>
       <p className="text-sm text-gray-500">{label}</p>
     </div>
   </div>
@@ -164,6 +176,7 @@ const Badge = ({ text, color = "purple" }) => {
     blue: "bg-blue-100 text-blue-700",
     orange: "bg-orange-100 text-orange-700",
     pink: "bg-pink-100 text-pink-700",
+    red: "bg-red-100 text-red-700",
     gray: "bg-gray-100 text-gray-600",
   };
   return (
@@ -173,7 +186,8 @@ const Badge = ({ text, color = "purple" }) => {
   );
 };
 
-const levelColor = { "10th": "blue", "12th": "green", graduation: "orange", pg: "purple" };
+const levelColor = { "10th": "blue", "12th": "green", grad: "orange", pg: "purple" };
+const levelLabel = { "10th": "After 10th", "12th": "After 12th", grad: "After Graduation", pg: "After PG" };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Dashboard
@@ -201,13 +215,13 @@ const DashboardSection = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-6">
           <h3 className="font-bold text-gray-800 mb-4">Attempts by Level</h3>
           <div className="space-y-3">
             {stats?.level_breakdown?.map(({ level, count }) => (
               <div key={level}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium text-gray-700 capitalize">{level}</span>
+                  <span className="font-medium text-gray-700">{levelLabel[level] || level}</span>
                   <span className="text-gray-500">{count}</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -221,7 +235,7 @@ const DashboardSection = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-6">
           <h3 className="font-bold text-gray-800 mb-4">Top Career Matches</h3>
           <div className="space-y-3">
             {stats?.top_careers?.map(({ career, count }, i) => (
@@ -237,7 +251,7 @@ const DashboardSection = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-6">
         <h3 className="font-bold text-gray-800 mb-4">Recently Joined Users</h3>
         <div className="space-y-2">
           {stats?.recent_users?.map(u => (
@@ -319,6 +333,16 @@ const UsersSection = ({ showToast }) => {
     }
   };
 
+  const handleToggleBan = async (u) => {
+    try {
+      await adminService.updateUser(u.id, { is_banned: !u.is_banned });
+      showToast(u.is_banned ? "User unbanned!" : "User banned!", "success");
+      load();
+    } catch (e) {
+      showToast(e.response?.data?.detail || "Error", "error");
+    }
+  };
+
   const openView = async (u) => {
     const r = await adminService.getUser(u.id);
     setViewData(r.data);
@@ -345,19 +369,21 @@ const UsersSection = ({ showToast }) => {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-purple-50/60 border-b border-purple-100/60">
             <tr>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">ID</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Name</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Email</th>
+              <th className="text-left px-5 py-3 text-gray-500 font-medium">Status</th>
+              <th className="text-left px-5 py-3 text-gray-500 font-medium">Last Login</th>
               <th className="text-right px-5 py-3 text-gray-500 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {users.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50/50">
+              <tr key={u.id} className={`hover:bg-gray-50/50 ${u.is_banned ? "bg-red-50/40" : ""}`}>
                 <td className="px-5 py-3 text-gray-500">#{u.id}</td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
@@ -369,10 +395,27 @@ const UsersSection = ({ showToast }) => {
                 </td>
                 <td className="px-5 py-3 text-gray-600">{u.email}</td>
                 <td className="px-5 py-3">
+                  {u.is_banned
+                    ? <Badge text="Banned" color="red" />
+                    : <Badge text="Active" color="green" />}
+                </td>
+                <td className="px-5 py-3 text-gray-500 text-xs">
+                  {u.last_login ? new Date(u.last_login).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Never"}
+                </td>
+                <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button onClick={() => openView(u)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500" title="View">
                       <Icon name="eye" />
                     </button>
+                    {u.is_banned ? (
+                      <button onClick={() => handleToggleBan(u)} className="p-1.5 rounded-lg hover:bg-green-50 text-green-600" title="Unban user">
+                        <Icon name="unban" />
+                      </button>
+                    ) : (
+                      <button onClick={() => handleToggleBan(u)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400" title="Ban user">
+                        <Icon name="ban" />
+                      </button>
+                    )}
                     <button onClick={() => { setSelected(u); setForm({ name: u.name, email: u.email, password: "" }); setModal("edit"); }}
                       className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500" title="Edit">
                       <Icon name="edit" />
@@ -438,20 +481,54 @@ const UsersSection = ({ showToast }) => {
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-gray-500 text-xs mb-1">Email</p>
-                <p className="font-medium">{viewData.email}</p>
+                <p className="font-medium break-all">{viewData.email}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-gray-500 text-xs mb-1">Status</p>
+                {viewData.is_banned
+                  ? <Badge text="Banned" color="red" />
+                  : <Badge text="Active" color="green" />}
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-gray-500 text-xs mb-1">Last Login</p>
+                <p className="font-medium text-xs">{viewData.last_login ? new Date(viewData.last_login).toLocaleString() : "Never"}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3 col-span-2">
                 <p className="text-gray-500 text-xs mb-1">Total Quiz Attempts</p>
                 <p className="font-bold text-purple-600 text-lg">{viewData.total_attempts}</p>
               </div>
             </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-1">Stored Password (Bcrypt Hash)</p>
+              <div className="bg-gray-900 rounded-xl p-3">
+                <code className="text-emerald-400 text-[11px] break-all">{viewData.password_hash}</code>
+              </div>
+            </div>
+
+            {viewData.activity?.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Recent Activity</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {viewData.activity.map(a => (
+                    <div key={a.id} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                      <Badge text={a.action} color={a.action === "login" ? "green" : a.action === "ban" ? "red" : a.action === "unban" ? "blue" : "purple"} />
+                      <span className="text-gray-700 flex-1 truncate">{a.detail || a.action}</span>
+                      <span className="text-gray-400 flex-shrink-0">{new Date(a.created_at).toLocaleDateString()} {new Date(a.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {viewData.results?.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-gray-700 mb-2">Quiz History</p>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {viewData.results.map(r => (
                     <div key={r.id} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl text-xs">
-                      <Badge text={r.level} color={levelColor[r.level] || "gray"} />
+                      <Badge text={levelLabel[r.level] || r.level} color={levelColor[r.level] || "gray"} />
                       <span className="text-gray-700 font-medium">{r.top_career}</span>
                       <span className="text-gray-400 ml-auto">{r.percentage}%</span>
                     </div>
@@ -550,11 +627,11 @@ const QuestionsSection = ({ showToast }) => {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-2 flex-wrap">
-          {["", "10th", "12th", "graduation", "pg"].map(l => (
+          {["", "10th", "12th", "grad", "pg"].map(l => (
             <button key={l}
               onClick={() => setLevelFilter(l)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${levelFilter === l ? "bg-purple-600 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-              {l || "All"}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${levelFilter === l ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+              {l === "grad" ? "Graduation" : l || "All"}
             </button>
           ))}
         </div>
@@ -568,11 +645,11 @@ const QuestionsSection = ({ showToast }) => {
 
       <div className="space-y-3">
         {questions.map(q => (
-          <div key={q.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div key={q.id} className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden">
             <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setExpanded(expanded === q.id ? null : q.id)}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <Badge text={q.level} color={levelColor[q.level] || "gray"} />
+                  <Badge text={levelLabel[q.level] || q.level} color={levelColor[q.level] || "gray"} />
                   {q.is_start && <Badge text="Start" color="green" />}
                   <span className="text-xs text-gray-400">Q#{q.id} · Order {q.order_index}</span>
                 </div>
@@ -640,7 +717,7 @@ const QuestionsSection = ({ showToast }) => {
         <Modal title="Create Question" onClose={() => setModal(null)}>
           <div className="space-y-4">
             <Select label="Level" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))}>
-              {["10th", "12th", "graduation", "pg"].map(l => <option key={l}>{l}</option>)}
+              {["10th", "12th", "grad", "pg"].map(l => <option key={l} value={l}>{l === "grad" ? "Graduation" : l}</option>)}
             </Select>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
@@ -743,11 +820,11 @@ const ResultsSection = ({ showToast }) => {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-2 flex-wrap">
-          {["", "10th", "12th", "graduation", "pg"].map(l => (
+          {["", "10th", "12th", "grad", "pg"].map(l => (
             <button key={l} onClick={() => setLevelFilter(l)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                ${levelFilter === l ? "bg-purple-600 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-              {l || "All"}
+                ${levelFilter === l ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+              {l === "grad" ? "Graduation" : l || "All"}
             </button>
           ))}
         </div>
@@ -768,7 +845,7 @@ const ResultsSection = ({ showToast }) => {
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading results...</div>
       ) : grouped.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 text-center py-16">
+        <div className="bg-white rounded-3xl border border-purple-100/70 text-center py-16">
           <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <Icon name="results" />
           </div>
@@ -780,7 +857,7 @@ const ResultsSection = ({ showToast }) => {
           {grouped.map(u => {
             const isOpen = expanded === u.user_email;
             return (
-              <div key={u.user_email} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div key={u.user_email} className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden">
                 {/* User row */}
                 <button
                   onClick={() => setExpanded(isOpen ? null : u.user_email)}
@@ -793,7 +870,7 @@ const ResultsSection = ({ showToast }) => {
                     <p className="text-sm font-semibold text-gray-800 truncate">{u.user_email}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-gray-400">Latest:</span>
-                      <Badge text={u.latest_level} color={levelColor[u.latest_level] || "gray"} />
+                      <Badge text={levelLabel[u.latest_level] || u.latest_level} color={levelColor[u.latest_level] || "gray"} />
                       <span className="text-xs text-gray-600">{u.latest_career}</span>
                     </div>
                   </div>
@@ -817,7 +894,7 @@ const ResultsSection = ({ showToast }) => {
                     <div className="space-y-2">
                       {u.attempts.map(a => (
                         <div key={a.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5 text-sm">
-                          <Badge text={a.level} color={levelColor[a.level] || "gray"} />
+                          <Badge text={levelLabel[a.level] || a.level} color={levelColor[a.level] || "gray"} />
                           <span className="font-medium text-gray-800 flex-1 truncate">{a.top_career}</span>
                           <Badge text={a.fit_label} color={fitColor[a.fit_label] || "gray"} />
                           <span className="text-gray-500 font-medium w-10 text-right">{a.percentage}%</span>
@@ -957,9 +1034,9 @@ const CollegesSection = ({ showToast }) => {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
-          <thead className="bg-gray-50 border-b border-gray-100">
+          <thead className="bg-purple-50/60 border-b border-purple-100/60">
             <tr>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Name</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">State</th>
@@ -1003,7 +1080,7 @@ const CollegesSection = ({ showToast }) => {
           </tbody>
         </table>
         {colleges.length === 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 text-center py-16">
+          <div className="bg-white rounded-3xl border border-purple-100/70 text-center py-16">
             <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon name="colleges" />
             </div>
@@ -1041,11 +1118,78 @@ const CollegesSection = ({ showToast }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SECTION: Activity
+// ═══════════════════════════════════════════════════════════════════════════════
+const activityColor = {
+  login: "green",
+  register: "purple",
+  quiz_saved: "orange",
+  ban: "red",
+  unban: "blue",
+  deleted: "gray",
+};
+
+const ActivitySection = () => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminService.getActivity({ limit: 100 })
+      .then(r => setItems(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden">
+        <div className="px-6 py-4 border-b border-purple-100/60 flex items-center justify-between">
+          <h3 className="font-bold text-gray-800">Recent User Activity</h3>
+          <Badge text={`${items.length} events`} color="purple" />
+        </div>
+        {loading ? (
+          <div className="text-center py-16 text-gray-400">Loading activity...</div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 bg-white rounded-3xl">
+            <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Icon name="users" />
+            </div>
+            <p className="text-gray-500 font-medium">No activity yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-purple-50">
+            {items.map(a => (
+              <div key={a.id} className="px-6 py-3.5 flex items-center gap-3 hover:bg-purple-50/40 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  {a.email?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 truncate">
+                    <span className="font-semibold">{a.email}</span>
+                    <span className="text-gray-400"> · </span>
+                    <span className="text-gray-500">{a.detail || a.action}</span>
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(a.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  </p>
+                </div>
+                <Badge text={a.action.replace("_", " ")} color={activityColor[a.action] || "gray"} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN: Admin Panel
 // ═══════════════════════════════════════════════════════════════════════════════
 const SECTIONS = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard" },
   { key: "users",     label: "Users",     icon: "users"     },
+  { key: "activity",  label: "Activity",  icon: "eye"       },
   { key: "questions", label: "Questions", icon: "questions" },
   { key: "results",   label: "Results",   icon: "results"   },
   { key: "colleges",  label: "Colleges",  icon: "colleges"  },
@@ -1073,22 +1217,22 @@ export default function AdminPanel() {
   const active = SECTIONS.find(s => s.key === section);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50/70 via-gray-50 to-indigo-50/70 flex">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-[#1e1b4b] via-[#4c1d95] to-[#2e1065] flex flex-col transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 lg:flex`}>
-        <div className="px-6 py-5 border-b border-gray-100">
+        <div className="px-6 py-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 ring-1 ring-white/20 flex items-center justify-center">
               <span className="text-white text-xs font-bold">A</span>
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-sm leading-none">AimRoute</p>
-              <p className="text-xs text-gray-400">Admin Panel</p>
+              <p className="font-bold text-white text-sm leading-none">AimRoute</p>
+              <p className="text-xs text-purple-200/70">Admin Panel</p>
             </div>
           </div>
         </div>
@@ -1097,23 +1241,23 @@ export default function AdminPanel() {
           {SECTIONS.map(s => (
             <button key={s.key} onClick={() => { setSection(s.key); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${section === s.key ? "bg-purple-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}>
+                ${section === s.key ? "bg-white/15 text-white shadow-lg ring-1 ring-white/20" : "text-purple-100/80 hover:bg-white/10 hover:text-white"}`}>
               <Icon name={s.icon} />
               {s.label}
             </button>
           ))}
         </nav>
 
-        <div className="px-4 py-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50">
-            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center justify-center flex-shrink-0">
+        <div className="px-4 py-4 border-t border-white/10">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/10 transition-colors">
+            <div className="w-8 h-8 rounded-full bg-purple-500/30 ring-1 ring-white/20 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+              <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+              <p className="text-xs text-purple-200/70 truncate">{user?.email}</p>
             </div>
-            <button onClick={logout} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="Logout">
+            <button onClick={logout} className="p-1.5 text-purple-200/70 hover:text-red-400 rounded-lg hover:bg-white/10" title="Logout">
               <Icon name="logout" />
             </button>
           </div>
@@ -1122,7 +1266,7 @@ export default function AdminPanel() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 lg:px-8 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-purple-100/60 px-4 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl hover:bg-gray-100 text-gray-500">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
@@ -1130,7 +1274,7 @@ export default function AdminPanel() {
               </svg>
             </button>
             <div>
-              <h1 className="text-base font-bold text-gray-900">{active?.label}</h1>
+              <h1 className="text-base font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">{active?.label}</h1>
               <p className="text-xs text-gray-400 hidden sm:block">AimRoute Admin Panel</p>
             </div>
           </div>
@@ -1142,6 +1286,7 @@ export default function AdminPanel() {
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
           {section === "dashboard" && <DashboardSection />}
           {section === "users"     && <UsersSection showToast={showToast} />}
+          {section === "activity"  && <ActivitySection />}
           {section === "questions" && <QuestionsSection showToast={showToast} />}
           {section === "results"   && <ResultsSection showToast={showToast} />}
           {section === "colleges"  && <CollegesSection showToast={showToast} />}

@@ -375,6 +375,7 @@ export default function CareerQuestions() {
   const level = LEVEL_ALIAS[rawLevel] || rawLevel;
 
   const [questions, setQuestions]                     = useState([]);
+  const [curIdx, setCurIdx]                           = useState(0);
   const [currentQuestion, setCurrentQuestion]         = useState(null);
   const [scores, setScores]                           = useState({});
   const [reasons, setReasons]                         = useState([]);
@@ -400,8 +401,16 @@ export default function CareerQuestions() {
     API.get(`/quiz/?level=${level}`)
       .then(r => {
         const allQ = r.data.questions || r.data;
-        setQuestions(allQ);
-        setCurrentQuestion(allQ.find(q => q.is_start) || allQ[0]);
+        const start = allQ.find(q => q.is_start) || allQ[0];
+        const rest = allQ.filter(q => q.id !== (start && start.id));
+        for (let i = rest.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [rest[i], rest[j]] = [rest[j], rest[i]];
+        }
+        const ordered = start ? [start, ...rest] : rest;
+        setQuestions(ordered);
+        setCurIdx(0);
+        setCurrentQuestion(ordered[0]);
         setLoading(false);
       })
       .catch(() => { setError("Failed to load questions."); setLoading(false); });
@@ -470,13 +479,11 @@ export default function CareerQuestions() {
 
       if (opt.next_question_id) {
         const nq = questions.find(q => q.id === opt.next_question_id);
-        if (nq) { setCurrentQuestion(nq); return; }
+        if (nq) { setCurIdx(questions.indexOf(nq)); setCurrentQuestion(nq); return; }
       }
 
-      const nbo = questions
-        .filter(q => q.order_index > currentQuestion.order_index)
-        .sort((a, b) => a.order_index - b.order_index)[0];
-      if (nbo) { setCurrentQuestion(nbo); return; }
+      const nbo = questions[curIdx + 1];
+      if (nbo) { setCurIdx(curIdx + 1); setCurrentQuestion(nbo); return; }
 
       submitToBackend(updatedScores, updatedReasons);
     }, 300);
