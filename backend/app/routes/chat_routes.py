@@ -9,9 +9,11 @@ load_dotenv()  # ← load .env right here in this file too
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-# ← Read keys inside functions, not at module level
-def get_groq_key(): return os.getenv("GROQ_API_KEY", "")
-def get_gemini_key(): return os.getenv("GEMINI_API_KEY", "")
+# ← Read keys + model names inside functions, not at module level
+def get_groq_key():    return os.getenv("GROQ_API_KEY", "")
+def get_gemini_key():  return os.getenv("GEMINI_API_KEY", "")
+def get_groq_model():  return os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+def get_gemini_model(): return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 SYSTEM_PROMPT = """You are AimRoute's AI career counselor — a warm, knowledgeable guide helping Indian students (10th to PG level) make smart career decisions.
 
@@ -64,7 +66,7 @@ async def call_groq(messages_payload: list, system: str) -> str:
         "Content-Type": "application/json",
     }
     body = {
-        "model": "llama-3.3-70b-versatile",
+        "model": get_groq_model(),
         "messages": [{"role": "system", "content": system}] + messages_payload,
         "max_tokens": 700,
         "temperature": 0.7,
@@ -79,7 +81,7 @@ async def call_groq(messages_payload: list, system: str) -> str:
 
 async def call_gemini(messages_payload: list, system: str) -> str:
     key = get_gemini_key()
-    model = "gemini-2.0-flash"
+    model = get_gemini_model()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
     contents = []
     for msg in messages_payload:

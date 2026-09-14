@@ -85,9 +85,10 @@ function Signup() {
       });
     } catch (err) {
       const msg = err.response?.data?.detail;
-      if      (msg === "Email already registered") setError("An account with this email already exists.");
-      else if (msg)                                setError(msg);
-      else                                         setError("Signup failed. Please try again.");
+      if      (!err.response)                            setError("Cannot reach the server. Please try again.");
+      else if (msg === "Email already registered")        setError("An account with this email already exists.");
+      else if (msg)                                       setError(msg);
+      else                                                setError("Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -26,6 +26,8 @@ def get_db():
 
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.email == user.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered. Please login instead.")
     safe_password = user.password[:72]
     hashed_pwd = hash_password(safe_password)
     new_user = User(
@@ -60,7 +62,10 @@ async def forgot_password(
     }
 
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-    await send_reset_email(request.email, reset_link)
+    try:
+        await send_reset_email(request.email, reset_link)
+    except Exception as e:
+        print(f"Reset email failed for {request.email}: {e}")
 
     return {"message": "If this email is registered, a reset link has been sent."}
 

@@ -1,9 +1,10 @@
+import os
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 
 conf = ConnectionConfig(
     MAIL_USERNAME="aimroute.noreply@gmail.com",
-    MAIL_PASSWORD="dojxtanxhjeofita",
+    MAIL_PASSWORD=os.getenv("EMAIL_PASSWORD", ""),
     MAIL_FROM="aimroute.noreply@gmail.com",
     MAIL_FROM_NAME="AimRoute",
     MAIL_PORT=587,

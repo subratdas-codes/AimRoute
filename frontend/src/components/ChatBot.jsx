@@ -77,7 +77,7 @@ const ChatBot = () => {
     } catch (err) {
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "⚠️ Could not connect to backend. Make sure backend is running on port 8000.",
+        content: "Could not connect to AimRoute AI. The service may be temporarily unavailable — please try again in a moment.",
       }]);
     } finally {
       setLoading(false);
