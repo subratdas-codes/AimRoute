@@ -1,8 +1,11 @@
 import os
+import json
 import socket
 import smtplib
 import threading
 import traceback
+import urllib.request as urlrequest
+import urllib.error as urlerror
 from email.message import EmailMessage
 
 SMTP_HOST = "smtp.gmail.com"
@@ -10,6 +13,66 @@ SMTP_PORT = 587
 MAIL_USERNAME = os.getenv("MAIL_USERNAME") or "aimroute.noreply@gmail.com"
 MAIL_PASSWORD = os.getenv("EMAIL_PASSWORD") or os.getenv("MAIL_PASSWORD") or ""
 MAIL_FROM = os.getenv("MAIL_FROM") or MAIL_USERNAME
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "").strip().lower()
+
+
+def _provider_send(to: str, subject: str, html: str, seconds: float = 30):
+    """Send via an HTTPS email API (port 443). Returns True on success."""
+    if EMAIL_PROVIDER == "sendgrid":
+        api_key = os.getenv("SENDGRID_API_KEY", "")
+        payload = {
+            "personalizations": [{"to": [{"email": to}]}],
+            "from": {"email": MAIL_FROM, "name": "AimRoute"},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": html}],
+        }
+        req = urlrequest.Request(
+            "https://api.sendgrid.com/v3/mail/send",
+            data=json.dumps(payload).encode(),
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+    elif EMAIL_PROVIDER == "brevo":
+        api_key = os.getenv("BREVO_API_KEY", "")
+        payload = {
+            "sender": {"email": MAIL_FROM, "name": "AimRoute"},
+            "to": [{"email": to}],
+            "subject": subject,
+            "htmlContent": html,
+        }
+        req = urlrequest.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=json.dumps(payload).encode(),
+            headers={"api-key": api_key, "Content-Type": "application/json"},
+            method="POST",
+        )
+    elif EMAIL_PROVIDER == "resend":
+        api_key = os.getenv("RESEND_API_KEY", "")
+        payload = {
+            "from": f"AimRoute <{MAIL_FROM}>",
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        }
+        req = urlrequest.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps(payload).encode(),
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+    else:
+        raise RuntimeError(f"Unknown EMAIL_PROVIDER: {EMAIL_PROVIDER!r}")
+
+    try:
+        with urlrequest.urlopen(req, timeout=seconds) as resp:
+            return resp.status < 300
+    except urlerror.HTTPError as e:
+        detail = ""
+        try:
+            detail = e.read().decode("utf-8", "replace")[:500]
+        except Exception:
+            pass
+        raise RuntimeError(f"{EMAIL_PROVIDER} API {e.code}: {detail}") from e
 
 
 def _build_mime(to: str, subject: str, html: str):
@@ -21,6 +84,14 @@ def _build_mime(to: str, subject: str, html: str):
     msg.set_content("Please view this email in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
     return msg
+
+
+def _send_email(to: str, subject: str, html: str, seconds: float = 30):
+    """Try HTTPS email API first (works on Render), fall back to SMTP."""
+    if EMAIL_PROVIDER:
+        _provider_send(to, subject, html, seconds)
+        return
+    _smtp_send(to, subject, html, seconds)
 
 
 def _smtp_send(to: str, subject: str, html: str, seconds: float = 30):
@@ -49,7 +120,7 @@ def send_reset_email(email: str, reset_link: str):
         </p>
     </div>
     """
-    _smtp_send(email, "AimRoute - Reset Your Password", html)
+    _send_email(email, "AimRoute - Reset Your Password", html)
 
 
 def send_reset_email_background(email: str, reset_link: str):
@@ -141,7 +212,7 @@ def send_result_email(email: str, name: str, top_career: str, level: str, dashbo
         </div>
     </div>
     """
-    _smtp_send(email, "Your AimRoute Career Result is Saved!", html)
+    _send_email(email, "Your AimRoute Career Result is Saved!", html)
 
 
 def send_result_email_background(email: str, name: str, top_career: str, level: str, dashboard_url: str):
