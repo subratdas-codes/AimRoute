@@ -4,7 +4,7 @@ from app.database.connection import SessionLocal
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate
 from app.utils.hash import hash_password, verify_password
-from app.utils.email_handler import send_reset_email
+from app.utils.email_handler import send_reset_email_background
 from app.utils.dependencies import get_current_user
 from pydantic import BaseModel, EmailStr
 import secrets
@@ -46,7 +46,7 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 @router.post("/forgot-password")
-async def forgot_password(
+def forgot_password(
     request: ForgotPasswordRequest,
     db: Session = Depends(get_db)
 ):
@@ -62,10 +62,7 @@ async def forgot_password(
     }
 
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-    try:
-        await send_reset_email(request.email, reset_link)
-    except Exception as e:
-        print(f"Reset email failed for {request.email}: {e}")
+    send_reset_email_background(request.email, reset_link)
 
     return {"message": "If this email is registered, a reset link has been sent."}
 

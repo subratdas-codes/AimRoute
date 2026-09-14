@@ -1,4 +1,6 @@
 import os
+import asyncio
+import threading
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 
@@ -38,6 +40,20 @@ async def send_reset_email(email: str, reset_link: str):
     )
     fm = FastMail(conf)
     await fm.send_message(message)
+
+
+async def _send_with_timeout(coro, seconds: float = 15):
+    return await asyncio.wait_for(coro, timeout=seconds)
+
+
+def send_reset_email_background(email: str, reset_link: str):
+    """Fire-and-forget the reset email on a daemon thread so the API responds instantly."""
+    def _run():
+        try:
+            asyncio.run(_send_with_timeout(send_reset_email(email, reset_link)))
+        except Exception as e:
+            print(f"[Email] background reset-email send failed for {email}: {e}")
+    threading.Thread(target=_run, daemon=True).start()
 
 
 async def send_result_email(email: str, name: str, top_career: str, level: str, dashboard_url: str):
