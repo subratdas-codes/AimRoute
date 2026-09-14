@@ -4,10 +4,11 @@ from app.database.connection import SessionLocal
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate
 from app.utils.hash import hash_password, verify_password
-from app.utils.email_handler import send_reset_email_background
+from app.utils.email_handler import send_reset_email_background, diagnose_email
 from app.utils.activity import log_activity
 from app.utils.dependencies import get_current_user
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 import secrets
 import os
 from datetime import datetime, timedelta
@@ -67,6 +68,15 @@ def forgot_password(
     send_reset_email_background(request.email, reset_link)
 
     return {"message": "If this email is registered, a reset link has been sent."}
+
+
+# ── EMAIL DIAGNOSTIC (debug helper) ────────────────────────
+class EmailDiagnosticRequest(BaseModel):
+    to: Optional[str] = None
+
+@router.post("/email-diagnostic")
+def email_diagnostic_endpoint(request: EmailDiagnosticRequest):
+    return {"results": diagnose_email(request.to)}
 
 
 # ── RESET PASSWORD ───────────────────────────────────────

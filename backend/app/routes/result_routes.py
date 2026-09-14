@@ -1,5 +1,6 @@
 import json
 import os
+import asyncio
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -66,12 +67,13 @@ async def save_result(
     # Send congratulation email in background (non-blocking)
     async def _send_result_email_safe():
         try:
-            await send_result_email(
-                email         = current_user,
-                name          = user_name,
-                top_career    = body.top_career,
-                level         = body.level,
-                dashboard_url = DASHBOARD_URL,
+            await asyncio.to_thread(
+                send_result_email,
+                current_user,
+                user_name,
+                body.top_career,
+                body.level,
+                DASHBOARD_URL,
             )
             print(f"[Email] result email SENT to {current_user}")
         except Exception as e:
