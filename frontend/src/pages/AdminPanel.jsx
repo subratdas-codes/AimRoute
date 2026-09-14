@@ -91,6 +91,11 @@ const Icon = ({ name }) => {
         <path d="M9 12l2 2 4-4"/>
       </svg>
     ),
+    key: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+      </svg>
+    ),
   };
   return icons[name] || null;
 };
@@ -284,6 +289,7 @@ const UsersSection = ({ showToast }) => {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [confirm, setConfirm] = useState(null);
   const [viewData, setViewData] = useState(null);
+  const [reset, setReset] = useState(null);
   const limit = 10;
 
   const load = useCallback(() => {
@@ -347,6 +353,19 @@ const UsersSection = ({ showToast }) => {
     const r = await adminService.getUser(u.id);
     setViewData(r.data);
     setModal("view");
+  };
+
+  const handleResetPassword = async (u) => {
+    setReset({ user: u, new_password: "", loading: true });
+    try {
+      const r = await adminService.resetUserPassword(u.id, {});
+      setReset({ user: u, new_password: r.data.new_password, loading: false });
+      showToast("Password reset!", "success");
+      if (modal === "view") setViewData(v => v ? { ...v, password_hash: r.data.password_hash || v.password_hash } : v);
+    } catch (e) {
+      showToast(e.response?.data?.detail || "Error resetting password", "error");
+      setReset(null);
+    }
   };
 
   return (
@@ -416,6 +435,9 @@ const UsersSection = ({ showToast }) => {
                         <Icon name="ban" />
                       </button>
                     )}
+                    <button onClick={() => handleResetPassword(u)} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-500" title="Reset password">
+                      <Icon name="key" />
+                    </button>
                     <button onClick={() => { setSelected(u); setForm({ name: u.name, email: u.email, password: "" }); setModal("edit"); }}
                       className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500" title="Edit">
                       <Icon name="edit" />
@@ -506,6 +528,13 @@ const UsersSection = ({ showToast }) => {
               </div>
             </div>
 
+            <div className="flex gap-3">
+              <button onClick={() => handleResetPassword({ id: viewData.id, name: viewData.name, email: viewData.email })}
+                className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 flex items-center justify-center gap-2">
+                <Icon name="key" /> Reset Password
+              </button>
+            </div>
+
             {viewData.activity?.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-gray-700 mb-2">Recent Activity</p>
@@ -546,6 +575,35 @@ const UsersSection = ({ showToast }) => {
           onConfirm={() => handleDelete(confirm.id)}
           onCancel={() => setConfirm(null)}
         />
+      )}
+
+      {reset && (
+        <Modal title="Reset Password" onClose={() => setReset(null)}>
+          {reset.loading ? (
+            <div className="text-center py-8 text-gray-500 text-sm">Resetting password…</div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                New password for <b className="text-gray-900">{reset.user.name}</b>
+                {reset.user.email ? <span className="text-gray-400"> ({reset.user.email})</span> : null}
+              </p>
+              <div className="flex items-center gap-2 bg-gray-900 rounded-xl p-3">
+                <code className="text-emerald-400 text-sm flex-1 break-all select-all">{reset.new_password}</code>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(reset.new_password); showToast("Password copied!", "success"); }}
+                  className="text-purple-300 hover:text-purple-200 text-xs font-semibold bg-purple-900/40 px-3 py-1.5 rounded-lg shrink-0 transition-colors">
+                  Copy
+                </button>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
+                Share this password with the user securely and ask them to change it after logging in.
+              </div>
+              <button onClick={() => setReset(null)} className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
+                Done
+              </button>
+            </div>
+          )}
+        </Modal>
       )}
     </div>
   );

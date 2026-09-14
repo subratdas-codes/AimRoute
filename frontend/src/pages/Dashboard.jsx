@@ -623,10 +623,16 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <button onClick={() => navigate("/career-path")}
-              className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors">
-              Take new quiz →
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => navigate("/settings")}
+                className="px-5 py-2.5 border border-purple-200 bg-white text-purple-700 rounded-xl text-sm font-semibold hover:bg-purple-50 transition-colors">
+                🔑 Reset Password
+              </button>
+              <button onClick={() => navigate("/career-path")}
+                className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors">
+                Take new quiz →
+              </button>
+            </div>
           </div>
         </div>
 

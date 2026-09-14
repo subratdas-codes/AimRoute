@@ -9,6 +9,7 @@ export const getUser = (id) => api.get(`/admin/users/${id}`);
 export const createUser = (data) => api.post("/admin/users", data);
 export const updateUser = (id, data) => api.put(`/admin/users/${id}`, data);
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
+export const resetUserPassword = (id, data) => api.post(`/admin/users/${id}/reset-password`, data);
 export const getUserActivity = (id) => api.get(`/admin/users/${id}/activity`);
 export const getActivity = (params) => api.get("/admin/activity", { params });
 
