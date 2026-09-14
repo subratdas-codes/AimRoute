@@ -64,14 +64,20 @@ async def save_result(
     user_name = user.name if user else "Student"
 
     # Send congratulation email in background (non-blocking)
-    background_tasks.add_task(
-        send_result_email,
-        email         = current_user,
-        name          = user_name,
-        top_career    = body.top_career,
-        level         = body.level,
-        dashboard_url = DASHBOARD_URL,
-    )
+    async def _send_result_email_safe():
+        try:
+            await send_result_email(
+                email         = current_user,
+                name          = user_name,
+                top_career    = body.top_career,
+                level         = body.level,
+                dashboard_url = DASHBOARD_URL,
+            )
+            print(f"[Email] result email SENT to {current_user}")
+        except Exception as e:
+            print(f"[Email] result email send failed for {current_user}: {e}")
+
+    background_tasks.add_task(_send_result_email_safe)
 
     return {"message": "Result saved successfully", "id": result.id}
 

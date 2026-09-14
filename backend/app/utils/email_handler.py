@@ -51,6 +51,7 @@ def send_reset_email_background(email: str, reset_link: str):
     def _run():
         try:
             asyncio.run(_send_with_timeout(send_reset_email(email, reset_link)))
+            print(f"[Email] reset email SENT to {email}")
         except Exception as e:
             print(f"[Email] background reset-email send failed for {email}: {e}")
     threading.Thread(target=_run, daemon=True).start()
