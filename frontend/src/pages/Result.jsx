@@ -577,8 +577,13 @@ const Result = () => {
         {/* ── SAVE + RETRY ── */}
         <div style={{display:"flex",flexDirection:"column",gap:12,paddingBottom:40}}>
           {saved ? (
-            <div style={{width:"100%",padding:"16px",background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1.5px solid #86efac",borderRadius:16,fontWeight:700,color:"#16a34a",textAlign:"center",fontSize:15}}>
-              ✓ Result saved to your dashboard!
+            <div style={{width:"100%",textAlign:"center"}}>
+              <div style={{padding:"16px",background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1.5px solid #86efac",borderRadius:16,fontWeight:700,color:"#16a34a",fontSize:15,marginBottom:10}}>
+                ✓ Result saved to your dashboard!
+              </div>
+              <button onClick={()=>navigate("/dashboard")} className="brand-btn" style={{width:"100%",padding:"16px",borderRadius:16,fontSize:14,fontWeight:700}}>
+                Go to My Dashboard →
+              </button>
             </div>
           ) : (
             <button onClick={handleSave} disabled={saving} className="brand-btn" style={{width:"100%",padding:"17px",borderRadius:16,fontSize:15,fontWeight:700}}>
