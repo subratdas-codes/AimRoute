@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import os
 load_dotenv()
 
 from app.database.connection import engine
@@ -29,13 +30,14 @@ app = FastAPI(
 )
 
 # ✅ CORS — Both Vercel URLs + localhost dev
+ALLOW_ORIGINS = os.getenv(
+    "ALLOW_ORIGINS",
+    "https://aimroute.vercel.app,https://aimroute.onrender.com,http://localhost:5173",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://aimroute.vercel.app",
-        "https://aimroute-live-drab.vercel.app",
-        "http://localhost:5173",
-    ],
+    allow_origins=[origin.strip() for origin in ALLOW_ORIGINS if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

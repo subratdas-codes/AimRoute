@@ -8,9 +8,12 @@ from app.utils.email_handler import send_reset_email
 from app.utils.dependencies import get_current_user
 from pydantic import BaseModel, EmailStr
 import secrets
+import os
 from datetime import datetime, timedelta
 
 router = APIRouter()
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://aimroute.vercel.app")
 
 reset_tokens = {}
 
@@ -56,7 +59,7 @@ async def forgot_password(
         "expires": datetime.utcnow() + timedelta(minutes=30)
     }
 
-    reset_link = f"https://aimroute-live-drab.vercel.app/reset-password?token={token}"
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     await send_reset_email(request.email, reset_link)
 
     return {"message": "If this email is registered, a reset link has been sent."}

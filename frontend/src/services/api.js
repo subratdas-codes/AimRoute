@@ -1,7 +1,10 @@
 import axios from "axios";
 
+export const API_BASE =
+  import.meta.env.VITE_API_URL || "https://aimroute.onrender.com";
+
 const API = axios.create({
-  baseURL: "https://aimroute.onrender.com",
+  baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
   },

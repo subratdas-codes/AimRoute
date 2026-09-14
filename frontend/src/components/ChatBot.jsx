@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { API_BASE } from "../services/api";
 
 const SUGGESTED_QUESTIONS = [
   "What skills should I build for my career?",
@@ -56,7 +57,7 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("https://aimroute.onrender.com/chat/message", {
+      const response = await fetch(`${API_BASE}/chat/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

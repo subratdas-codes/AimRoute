@@ -9,8 +9,7 @@ from app.utils.hash import hash_password
 ADMIN_NAME     = "Admin"
 ADMIN_EMAIL    = "aimroute.noreply@gmail.com"
 ADMIN_PASSWORD = "Admin@123"
-ADMIN_URL      = ADMIN_URL = "https://aimroute-live-drab.vercel.app/admin-login"   
-# "http://localhost:5173/admin-login"
+ADMIN_URL      = f"{os.getenv('FRONTEND_URL', 'https://aimroute.vercel.app')}/admin-login"
 
 def create_admin():
     db = SessionLocal()

@@ -1,4 +1,5 @@
 import json
+import os
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -11,7 +12,7 @@ from app.utils.email_handler import send_result_email
 
 router = APIRouter(prefix="/results", tags=["Results"])
 
-DASHBOARD_URL = "https://aimroute-live-drab.vercel.app/dashboard"
+DASHBOARD_URL = f"{os.getenv('FRONTEND_URL', 'https://aimroute.vercel.app')}/dashboard"
 
 
 def get_db():
