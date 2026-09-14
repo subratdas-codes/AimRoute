@@ -1,11 +1,13 @@
 import os
 import json
+import base64
 import socket
 import smtplib
 import threading
 import traceback
 import urllib.request as urlrequest
 import urllib.error as urlerror
+import urllib.parse as urlparse
 from email.message import EmailMessage
 
 SMTP_HOST = "smtp.gmail.com"
@@ -81,13 +83,57 @@ def _build_mime(to: str, subject: str, html: str):
     msg["From"] = f"AimRoute <{MAIL_FROM}>"
     msg["To"] = to
     msg["Reply-To"] = MAIL_USERNAME
+    msg["Content-Type"] = "text/html"
     msg.set_content("Please view this email in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
     return msg
 
 
+# ── Gmail API over HTTPS (works on Render's free tier) ─────
+def _gmail_access_token(seconds: float = 30):
+    data = urlparse.urlencode({
+        "grant_type": "refresh_token",
+        "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
+        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
+        "refresh_token": os.getenv("GOOGLE_REFRESH_TOKEN", ""),
+    }).encode("ascii")
+    req = urlrequest.Request("https://oauth2.googleapis.com/token", data=data,
+                             headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urlrequest.urlopen(req, timeout=seconds) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    if "access_token" not in body:
+        raise RuntimeError(f"gmail token error: {body}")
+    return body["access_token"]
+
+
+def _gmail_api_send(to: str, subject: str, html: str, seconds: float = 60):
+    msg = _build_mime(to, subject, html)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+    token = _gmail_access_token(seconds)
+    req = urlrequest.Request(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        data=json.dumps({"raw": raw}).encode("utf-8"),
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=seconds) as resp:
+            return resp.status < 300
+    except urlerror.HTTPError as e:
+        detail = ""
+        try:
+            detail = e.read().decode("utf-8", "replace")[:500]
+        except Exception:
+            pass
+        raise RuntimeError(f"gmail API {e.code}: {detail}") from e
+
+
 def _send_email(to: str, subject: str, html: str, seconds: float = 30):
-    """Try HTTPS email API first (works on Render), fall back to SMTP."""
+    """Send over HTTPS if a provider is configured, else fall back to SMTP."""
+    if EMAIL_PROVIDER == "gmail":
+        _gmail_api_send(to, subject, html, seconds)
+        return
     if EMAIL_PROVIDER:
         _provider_send(to, subject, html, seconds)
         return
@@ -264,6 +310,8 @@ def _probe(host, smtp_port, use_ssl, timeout=15):
 
 def diagnose_email(to: str = None):
     pw = MAIL_PASSWORD
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    refresh = os.getenv("GOOGLE_REFRESH_TOKEN", "")
     results = {
         "mail_config": {
             "provider": EMAIL_PROVIDER or "smtp(gmail)",
@@ -273,6 +321,10 @@ def diagnose_email(to: str = None):
             "password_has_spaces": " " in pw,
             "password_last4": pw[-4:] if pw else "(empty)",
             "from": MAIL_FROM,
+            "gmail_api_client_id_set": bool(client_id),
+            "gmail_api_client_id_len": len(client_id),
+            "gmail_api_refresh_token_set": bool(refresh),
+            "gmail_api_refresh_token_len": len(refresh),
         },
         "targets_tested_from_render": [
             "smtp.gmail.com:587 (STARTTLS)",
@@ -293,4 +345,12 @@ def diagnose_email(to: str = None):
         results["verdict"] = ("Render's free tier blocks outbound SMTP to Gmail at the network layer. "
                               "No SMTP config (Gmail or any relay) will work from Render's free tier. "
                               "Fix: use an HTTPS email API (port 443) OR upgrade Render to a paid instance.")
+
+    if EMAIL_PROVIDER == "gmail" and to:
+        results["gmail_api_test"] = "attempted"
+        try:
+            _gmail_api_send(to, "AimRoute email diagnostic via Gmail API", "<p>This is a diagnostic test sent through the Gmail API (HTTPS).</p>")
+            results["gmail_api_test"] = f"OK -> {to}"
+        except Exception as e:
+            results["gmail_api_test"] = f"FAIL: {type(e).__name__}: {e}"
     return results
