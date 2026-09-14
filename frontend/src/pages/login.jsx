@@ -122,9 +122,10 @@ function Login() {
       navigate(hasResult ? "/result" : "/");
     } catch (err) {
       const msg = err.response?.data?.detail;
-      if      (msg === "User not found")   setError("No account found with this email.");
-      else if (msg === "Invalid password") setError("Incorrect password.");
-      else                                 setError("Login failed. Please try again.");
+      if      (!err.response)                         setError("Cannot reach the server. Please try again.");
+      else if (msg === "User not found")              setError("No account found with this email.");
+      else if (msg === "Invalid password")            setError("Incorrect password.");
+      else                                            setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

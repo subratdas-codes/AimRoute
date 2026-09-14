@@ -43,7 +43,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables ready")
+except Exception as e:
+    print(f"Database unavailable at startup (API still booting): {e}")
 
 # ── Register ALL routers ──────────────────────────────────────
 app.include_router(auth_routes.router,      prefix="/auth",     tags=["Auth"])
