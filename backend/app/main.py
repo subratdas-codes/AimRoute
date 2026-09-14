@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -70,3 +72,10 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "OK"}
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    import re
+    msg = str(exc)
+    msg = re.sub(r"://([^:/@]+):([^@]+)@", r"://\1:***@", msg)
+    return JSONResponse(status_code=500, content={"detail": f"Server error: {msg}"})
