@@ -256,6 +256,20 @@ def reset_user_data(user_id: int, db: Session = Depends(get_db), admin=Depends(r
     return {"message": f"Results and activity for {user.email} cleared"}
 
 
+@router.post("/users/delete-all")
+def delete_all_users(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    users = db.query(User).filter(~User.email.in_(ADMIN_EMAILS)).all()
+    for u in users:
+        db.query(Result).filter(Result.user_email == u.email).delete()
+        db.query(UserActivity).filter(UserActivity.email == u.email).delete()
+        db.delete(u)
+    db.commit()
+    print(f"[Admin] {admin} deleted all non-admin users")
+    for u in users:
+        log_activity(db, u.email, "user_deleted", "All non-admin users deleted by admin")
+    return {"message": f"Deleted {len(users)} users and all their data"}
+
+
 @router.post("/users")
 def create_user(body: UserCreate, db: Session = Depends(get_db), admin=Depends(require_admin)):
     existing = db.query(User).filter(User.email == body.email).first()

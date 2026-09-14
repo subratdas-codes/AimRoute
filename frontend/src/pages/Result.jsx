@@ -172,7 +172,7 @@ const SuccessModal = ({ onClose, onDashboard }) => (
   </div>
 );
 
-const CongratsOverlay = ({ onClose, closing }) => (
+const CongratsOverlay = ({ onClose, onDashboard, closing }) => (
   <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",animation:closing?"congratsOut 0.4s ease forwards":"none"}}>
     <div style={{background:"white",borderRadius:32,padding:"44px 40px",maxWidth:400,width:"90%",textAlign:"center",boxShadow:"0 40px 100px rgba(124,58,237,0.35)",animation:closing?"none":"congratsIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,height:5,background:"linear-gradient(90deg,#e91e8c,#7c3aed,#e91e8c)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
@@ -188,6 +188,11 @@ const CongratsOverlay = ({ onClose, closing }) => (
       <button onClick={onClose} style={{width:"100%",padding:"14px",borderRadius:14,fontSize:15,fontWeight:700,background:"linear-gradient(135deg,#e91e8c,#7c3aed)",backgroundSize:"200% 200%",animation:"shimmerText 4s ease infinite",border:"none",color:"white",cursor:"pointer",boxShadow:"0 8px 28px rgba(233,30,140,0.3)",transition:"transform 0.2s"}}
         onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
         View My Results →
+      </button>
+      <button onClick={onDashboard} style={{width:"100%",padding:"12px",borderRadius:14,fontSize:14,fontWeight:700,background:"white",border:"1.5px solid #e9d5ff",color:"#7c3aed",cursor:"pointer",marginTop:10,transition:"all 0.2s"}}
+        onMouseEnter={e=>{e.currentTarget.style.background="#fdf4ff";e.currentTarget.style.boxShadow="0 4px 16px rgba(124,58,237,0.1)";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="white";e.currentTarget.style.boxShadow="none";}}>
+        Go to My Dashboard →
       </button>
       <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:"linear-gradient(90deg,#7c3aed,#e91e8c,#7c3aed)",backgroundSize:"200% 100%",animation:"shimmerText 2s linear infinite"}}/>
     </div>
@@ -308,7 +313,7 @@ const Result = () => {
 
       {showGuestModal && <GuestLoginModal onClose={()=>setShowGuestModal(false)} onLogin={()=>navigate("/login",{state:{returnTo:"/result"}})} onSignup={()=>navigate("/signup",{state:{returnTo:"/result"}})}/>}
       {showSuccess    && <SuccessModal onClose={()=>setShowSuccess(false)} onDashboard={()=>navigate("/dashboard")}/>}
-      {showCongrats   && <CongratsOverlay closing={congratsOut} onClose={()=>{ setCongratsOut(true); setTimeout(()=>setShowCongrats(false),400); }}/>}
+      {showCongrats   && <CongratsOverlay closing={congratsOut} onDashboard={()=>navigate("/dashboard")} onClose={()=>{ setCongratsOut(true); setTimeout(()=>setShowCongrats(false),400); }}/>}
 
       <div style={{maxWidth:860,margin:"0 auto",padding:"40px 16px 60px",position:"relative",zIndex:1}}>
 

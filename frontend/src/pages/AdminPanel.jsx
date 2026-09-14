@@ -206,7 +206,9 @@ const DashboardSection = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   const loadStats = useCallback(() => {
     setLoading(true);
@@ -227,6 +229,18 @@ const DashboardSection = () => {
     } catch {
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      const r = await adminService.deleteAllUsers();
+      setConfirmDeleteAll(false);
+      loadStats();
+    } catch {
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -309,6 +323,13 @@ const DashboardSection = () => {
         >
           <Icon name="refresh" /> {resetting ? "Resetting..." : "Reset All Results & Activity"}
         </button>
+        <button
+          onClick={() => setConfirmDeleteAll(true)}
+          disabled={deletingAll}
+          className="flex items-center gap-2 px-4 py-2 border-2 border-red-500 text-red-600 bg-white rounded-xl text-sm font-medium hover:bg-red-50 disabled:opacity-50"
+        >
+          <Icon name="trash" /> {deletingAll ? "Deleting..." : "Delete All Users"}
+        </button>
       </div>
 
       {confirmReset && (
@@ -317,6 +338,14 @@ const DashboardSection = () => {
           confirmText="Reset All"
           onConfirm={handleResetAll}
           onCancel={() => setConfirmReset(false)}
+        />
+      )}
+      {confirmDeleteAll && (
+        <Confirm
+          message="Delete ALL user accounts (except admin)? Their results and activity will be gone forever."
+          confirmText="Delete All"
+          onConfirm={handleDeleteAll}
+          onCancel={() => setConfirmDeleteAll(false)}
         />
       )}
     </div>
