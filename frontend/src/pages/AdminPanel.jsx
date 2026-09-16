@@ -3,6 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as adminService from "../services/adminService";
 
+// ─── Date helpers (DD/MM/YYYY + local time) ────────────────
+const pad2 = n => String(n).padStart(2, "0");
+const formatDate = iso => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+};
+const formatDateTime = iso => {
+  if (!iso) return "";
+  return `${formatDate(iso)} ${pad2(new Date(iso).getHours())}:${pad2(new Date(iso).getMinutes())}`;
+};
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const Icon = ({ name }) => {
   const icons = {
@@ -507,7 +519,7 @@ const UsersSection = ({ showToast }) => {
                     : <Badge text="Active" color="green" />}
                 </td>
                 <td className="px-5 py-3 text-gray-500 text-xs">
-                  {u.last_login ? new Date(u.last_login).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Never"}
+                  {u.last_login ? formatDateTime(u.last_login) : "Never"}
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">
@@ -605,7 +617,7 @@ const UsersSection = ({ showToast }) => {
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-gray-500 text-xs mb-1">Last Login</p>
-                <p className="font-medium text-xs">{viewData.last_login ? new Date(viewData.last_login).toLocaleString() : "Never"}</p>
+                <p className="font-medium text-xs">{viewData.last_login ? formatDateTime(viewData.last_login) : "Never"}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3 col-span-2">
                 <p className="text-gray-500 text-xs mb-1">Total Quiz Attempts</p>
@@ -636,7 +648,7 @@ const UsersSection = ({ showToast }) => {
                       <span className="w-1.5 h-1.5 rounded-full bg-purple-500 flex-shrink-0" />
                       <Badge text={a.action} color={a.action === "login" ? "green" : a.action === "ban" ? "red" : a.action === "unban" ? "blue" : "purple"} />
                       <span className="text-gray-700 flex-1 truncate">{a.detail || a.action}</span>
-                      <span className="text-gray-400 flex-shrink-0">{new Date(a.created_at).toLocaleDateString()} {new Date(a.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="text-gray-400 flex-shrink-0">{formatDateTime(a.created_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -651,7 +663,8 @@ const UsersSection = ({ showToast }) => {
                     <div key={r.id} className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl text-xs">
                       <Badge text={levelLabel[r.level] || r.level} color={levelColor[r.level] || "gray"} />
                       <span className="text-gray-700 font-medium">{r.top_career}</span>
-                      <span className="text-gray-400 ml-auto">{r.percentage}%</span>
+                      <span className="text-gray-400 ml-auto">{formatDate(r.created_at)}</span>
+                      <span className="text-gray-400">{r.percentage}%</span>
                     </div>
                   ))}
                 </div>
@@ -1045,7 +1058,7 @@ const ResultsSection = ({ showToast }) => {
                           <Badge text={a.fit_label} color={fitColor[a.fit_label] || "gray"} />
                           <span className="text-gray-500 font-medium w-10 text-right">{a.percentage}%</span>
                           <span className="text-gray-400 text-xs w-20 text-right hidden sm:block">
-                            {a.created_at?.split("T")[0]}
+                            {formatDate(a.created_at)}
                           </span>
                           <button
                             onClick={() => setConfirm({ id: a.id, userEmail: u.user_email, label: `#${a.id}` })}
@@ -1316,7 +1329,7 @@ const ActivitySection = () => {
                     <span className="text-gray-500">{a.detail || a.action}</span>
                   </p>
                   <p className="text-xs text-gray-400">
-                    {new Date(a.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                    {formatDateTime(a.created_at)}
                   </p>
                 </div>
                 <Badge text={a.action.replace("_", " ")} color={activityColor[a.action] || "gray"} />
