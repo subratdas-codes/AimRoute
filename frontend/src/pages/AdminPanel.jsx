@@ -149,8 +149,8 @@ const Toast = ({ msg, type }) => (
 );
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, color, icon }) => (
-  <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-5 flex items-center gap-4">
+const StatCard = ({ label, value, color, icon, onClick }) => (
+  <div onClick={onClick} className={`bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-5 flex items-center gap-4 ${onClick ? "cursor-pointer hover:shadow-xl hover:border-purple-300 transition-all" : ""}`}>
     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
       <Icon name={icon} />
     </div>
@@ -202,7 +202,7 @@ const levelLabel = { "10th": "After 10th", "12th": "After 12th", grad: "After Gr
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Dashboard
 // ═══════════════════════════════════════════════════════════════════════════════
-const DashboardSection = () => {
+const DashboardSection = ({ onShowUsers }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -249,7 +249,7 @@ const DashboardSection = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Users" value={stats?.total_users} color="bg-purple-100 text-purple-600" icon="users" />
+        <StatCard label="Total Users" value={stats?.total_users} color="bg-purple-100 text-purple-600" icon="users" onClick={onShowUsers} />
         <StatCard label="Quiz Results" value={stats?.total_results} color="bg-blue-100 text-blue-600" icon="results" />
         <StatCard label="Questions" value={stats?.total_questions} color="bg-emerald-100 text-emerald-600" icon="questions" />
         <StatCard label="Colleges" value={stats?.total_colleges} color="bg-orange-100 text-orange-600" icon="colleges" />
@@ -293,10 +293,12 @@ const DashboardSection = () => {
       </div>
 
       <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-6">
-        <h3 className="font-bold text-gray-800 mb-4">Recently Joined Users</h3>
+        <h3 className={`font-bold ${onShowUsers ? "cursor-pointer text-purple-700 hover:text-purple-900 transition-colors" : "text-gray-800"} mb-4`} onClick={onShowUsers}>
+          Recently Joined Users <span className="text-xs font-normal text-gray-400 ml-1">(click to open Users)</span>
+        </h3>
         <div className="space-y-2">
           {stats?.recent_users?.map(u => (
-            <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50">
+            <div key={u.id} onClick={onShowUsers} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer">
               <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-700 font-bold text-sm flex items-center justify-center">
                 {u.name?.[0]?.toUpperCase()}
               </div>
@@ -1354,7 +1356,7 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    if (!user) { navigate("/admin-login"); return; }
+    if (!user) { navigate("/admin/login"); return; }
     if (!ADMIN_EMAILS.includes(user.email)) { navigate("/"); }
   }, [user]);
 
@@ -1392,6 +1394,15 @@ export default function AdminPanel() {
           ))}
         </nav>
 
+        <div className="px-3 pb-3 border-t border-white/10 pt-3">
+          <button onClick={() => navigate("/")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-purple-100/80 hover:bg-white/10 hover:text-white transition-all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Visit User Site
+          </button>
+        </div>
+
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/10 transition-colors">
             <div className="w-8 h-8 rounded-full bg-purple-500/30 ring-1 ring-white/20 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
@@ -1428,7 +1439,7 @@ export default function AdminPanel() {
         </header>
 
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          {section === "dashboard" && <DashboardSection />}
+          {section === "dashboard" && <DashboardSection onShowUsers={() => setSection("users")} />}
           {section === "users"     && <UsersSection showToast={showToast} />}
           {section === "activity"  && <ActivitySection />}
           {section === "questions" && <QuestionsSection showToast={showToast} />}

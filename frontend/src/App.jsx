@@ -24,7 +24,7 @@ import AdminPanel      from "./pages/AdminPanel";
 import AdminLogin      from "./pages/AdminLogin";
 import Compare from "./pages/Compare";
 
-const ADMIN_ROUTES = ["/admin", "/admin-login"];
+const ADMIN_ROUTES = ["/admin", "/admin/login"];
 const AUTH_ROUTES   = ["/login", "/signup"];
 
 function ProtectedRoute({ children }) {
@@ -64,7 +64,7 @@ function App() {
         <Route path="/settings"  element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
         {/* Admin */}
-        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin"       element={<AdminPanel />} />
 
         {/* Catch-all */}
