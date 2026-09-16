@@ -48,9 +48,17 @@ const SAMPLE_SCHOLARSHIPS = {
 
 const HISTORY_PAGE_SIZE = 3;
 
+function parseAsUTC(iso) {
+  if (!iso) return null;
+  const s = String(iso).trim().replace(" ", "T");
+  if (/[zZ]|[+-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  return new Date(s + "Z");
+}
+
 function formatDate(iso) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+  const d = parseAsUTC(iso);
+  if (!d || isNaN(d)) return "-";
+  return d.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
 }
 
 // ── Rich PDF download ─────────────────────────────────────────

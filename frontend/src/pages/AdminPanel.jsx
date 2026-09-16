@@ -3,16 +3,25 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as adminService from "../services/adminService";
 
-// ─── Date helpers (DD/MM/YYYY + local time) ────────────────
+// ─── Date helpers (DD/MM/YYYY + viewer's local time) ───────
+// Backend stores UTC but returns naive ISO (no timezone marker).
+// Parse as UTC when no zone present, then render in the viewer's local zone.
 const pad2 = n => String(n).padStart(2, "0");
+const parseAsUTC = iso => {
+  if (!iso) return null;
+  const s = String(iso).trim().replace(" ", "T");
+  if (/[zZ]|[+-]\d{2}:\d{2}$/.test(s)) return new Date(s);
+  return new Date(s + "Z");
+};
 const formatDate = iso => {
-  if (!iso) return "";
-  const d = new Date(iso);
+  const d = parseAsUTC(iso);
+  if (!d || isNaN(d)) return "";
   return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 const formatDateTime = iso => {
-  if (!iso) return "";
-  return `${formatDate(iso)} ${pad2(new Date(iso).getHours())}:${pad2(new Date(iso).getMinutes())}`;
+  const d = parseAsUTC(iso);
+  if (!d || isNaN(d)) return "";
+  return `${formatDate(iso)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
