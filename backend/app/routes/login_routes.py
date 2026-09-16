@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.database.connection import SessionLocal
+from app.database.connection import get_db
 from app.models.user_model import User
 from app.utils.hash import verify_password
 from app.utils.jwt_handler import create_access_token
@@ -9,14 +9,6 @@ from app.utils.activity import log_activity
 from app.schemas.login_schema import LoginRequest
 
 router = APIRouter()
-
-# DB Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/login")

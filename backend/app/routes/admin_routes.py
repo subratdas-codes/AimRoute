@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 
 from app.database.connection import get_db
@@ -186,7 +186,6 @@ def get_user(user_id: int, db: Session = Depends(get_db), admin=Depends(require_
         "is_banned": bool(user.is_banned),
         "last_login": str(user.last_login) if user.last_login else None,
         "created_at": str(user.created_at) if user.created_at else None,
-        "password_hash": user.password,
         "total_attempts": len(results),
         "results": [
             {"id": r.id, "level": r.level, "top_career": r.top_career,

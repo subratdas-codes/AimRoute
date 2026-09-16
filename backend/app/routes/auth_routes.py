@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database.connection import SessionLocal
+from app.database.connection import get_db
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate
-from app.utils.hash import hash_password, verify_password
-from app.utils.email_handler import send_reset_email_background, diagnose_email
+from app.utils.hash import hash_password
+from app.utils.email_handler import send_reset_email_background
 from app.utils.activity import log_activity
-from app.utils.dependencies import get_current_user
 from pydantic import BaseModel, EmailStr
-from typing import Optional
 import secrets
 import os
 from datetime import datetime, timedelta
@@ -18,13 +16,6 @@ router = APIRouter()
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://aimroute.vercel.app")
 
 reset_tokens = {}
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -70,15 +61,6 @@ def forgot_password(
     return {"message": "If this email is registered, a reset link has been sent."}
 
 
-# ── EMAIL DIAGNOSTIC (debug helper) ────────────────────────
-class EmailDiagnosticRequest(BaseModel):
-    to: Optional[str] = None
-
-@router.post("/email-diagnostic")
-def email_diagnostic_endpoint(request: EmailDiagnosticRequest):
-    return {"results": diagnose_email(request.to)}
-
-
 # ── RESET PASSWORD ───────────────────────────────────────
 class ResetPasswordRequest(BaseModel):
     token: str
@@ -108,23 +90,3 @@ def reset_password(
     del reset_tokens[request.token]
 
     return {"message": "Password reset successful. You can now login."}
-
-
-# ── VERIFY PASSWORD ──────────────────────────────────────
-class VerifyPasswordRequest(BaseModel):
-    password: str
-
-@router.post("/verify-password")
-def verify_password_endpoint(
-    request: VerifyPasswordRequest,
-    current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    user = db.query(User).filter(User.email == current_user).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if not verify_password(request.password, user.password):
-        raise HTTPException(status_code=401, detail="Incorrect password")
-
-    return {"verified": True}

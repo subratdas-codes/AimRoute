@@ -118,7 +118,7 @@ def suggest_colleges(
     medium: str = None,
     gender: str = None,
 ) -> list[dict]:
-    df = get_college_df().copy()
+    df = get_college_df()
 
     category_map = {
         "Technology": ["Engineering"],
@@ -128,7 +128,7 @@ def suggest_colleges(
         "Science":    ["Engineering", "Pharmacy", "Colleges"],
     }
     nirf_cats = category_map.get(dominant_category, ["Colleges"])
-    filtered = df[df["category"].isin(nirf_cats)].copy()
+    filtered = df[df["category"].isin(nirf_cats)]
 
     # Medium / gender filters (frontend can send these)
     if medium and medium != "All Languages" and "medium" in filtered.columns:
@@ -151,8 +151,8 @@ def suggest_colleges(
         state_df = filtered
 
     # Split into eligible and aspirational
-    eligible     = state_df[state_df["min_cutoff"] <= percentage].copy()
-    aspirational = state_df[state_df["min_cutoff"] > percentage].copy()
+    eligible     = state_df[state_df["min_cutoff"] <= percentage]
+    aspirational = state_df[state_df["min_cutoff"] > percentage]
 
     # Score both groups separately
     if not eligible.empty:

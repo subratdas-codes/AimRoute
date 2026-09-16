@@ -61,19 +61,38 @@ def migrate_user_columns():
 
     db = SessionLocal()
     try:
-        if engine.dialect.name.startswith("mysql"):
+        existing = set()
+        if engine.dialect.name == "postgresql":
+            rows = db.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'users'"
+            )).fetchall()
+            existing = {r[0] for r in rows}
+            types = {
+                "is_banned": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "last_login": "TIMESTAMP NULL",
+                "created_at": "TIMESTAMP NULL",
+            }
+            for col, ddl in types.items():
+                if col not in existing:
+                    db.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ddl}"))
+        elif engine.dialect.name.startswith("mysql"):
             rows = db.execute(text("SHOW COLUMNS FROM users")).fetchall()
             existing = {r[0] for r in rows}
+            types = {
+                "is_banned": "BOOLEAN NOT NULL DEFAULT 0",
+                "last_login": "DATETIME NULL",
+                "created_at": "DATETIME NULL",
+            }
+            for col, ddl in types.items():
+                if col not in existing:
+                    db.execute(text(f"ALTER TABLE users ADD COLUMN {col} {ddl}"))
         else:
             rows = db.execute(text("PRAGMA table_info(users)")).fetchall()
             existing = {r[1] for r in rows}
-
-        if "is_banned" not in existing:
-            db.execute(text("ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT 0"))
-        if "last_login" not in existing:
-            db.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME NULL"))
-        if "created_at" not in existing:
-            db.execute(text("ALTER TABLE users ADD COLUMN created_at DATETIME NULL"))
+            for col in ("is_banned", "last_login", "created_at"):
+                if col not in existing:
+                    db.execute(text(f"ALTER TABLE users ADD COLUMN {col} BOOLEAN NULL"))
 
         db.commit()
         print("Migration: users table columns ready")

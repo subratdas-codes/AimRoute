@@ -13,7 +13,7 @@ AI-powered career guidance platform. Users answer a short interest quiz, get mat
 - **College suggestions:** filterable by state, language and college type; shows eligibility vs cutoff, NIRF rank and average package. Custom-published college dataset.
 - **Personal dashboard:** saved results history with per-row delete and a reset-history button, profile card, password reset.
 - **Authentication:** register, login, forgot/reset password, change/verify password.
-- **Email:** confirmation + result summary email on save, password reset emails (Gmail API over HTTPS).
+- **Email:** result summary email on save, password reset emails (HTTPS email API, lifetime Brevo key).
 - **AI chatbot:** in-app assistant answering career questions (Groq + Gemini) — hidden on auth pages and admin panel.
 - **Career tools:** full roadmap page and career comparison.
 
@@ -32,8 +32,8 @@ AI-powered career guidance platform. Users answer a short interest quiz, get mat
 ## Tech Stack
 - **Frontend:** React 19 + Vite + Tailwind (deployed on **Vercel** → `aimroute.vercel.app`)
 - **Backend:** FastAPI + SQLAlchemy (deployed on **Render** → `aimroute.onrender.com`)
-- **Database:** MySQL (cloud)
-- **ML/AI:** scikit-learn model (`mlmodel/model.pkl`) for career prediction; **Groq + Gemini** for the chatbot; **Gmail API** for email
+- **Database:** PostgreSQL (cloud, permanent) **or** MySQL (local dev) — the backend auto-detects either from `DATABASE_URL`
+- **ML/AI:** scikit-learn model (`mlmodel/model.pkl`) for career prediction; **Groq + Gemini** for the chatbot; **Brevo/SendGrid/Resend** HTTPS API for email
 - **PDF reports:** generated client-side
 
 ## Repository layout
@@ -91,12 +91,14 @@ uvicorn app.main:app --reload
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL` | MySQL connection string (or `MYSQL_*` host/user/pass/db) |
+| `DATABASE_URL` | **PostgreSQL** (e.g. `postgresql://user:pass@host:5432/db`) **or** MySQL (`mysql+mysqlconnector://...`) — auto-detected |
 | `GROQ_API_KEY` | Chatbot (Groq) |
 | `GEMINI_API_KEY` | Chatbot / ML (Gemini) |
 | `FRONTEND_URL` | Where the frontend lives (for email links) |
-| `EMAIL_PROVIDER` | `gmail` for Gmail API |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REFRESH_TOKEN` | Gmail API OAuth |
+| `EMAIL_PROVIDER` | `brevo` (recommended) / `sendgrid` / `resend` / `gmail` |
+| `BREVO_API_KEY` (or `SENDGRID_API_KEY` / `RESEND_API_KEY`) | Lifetime API key for HTTPS email |
+| `MAIL_FROM` | Verified sender email (e.g. `aimroute.noreply@gmail.com`) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REFRESH_TOKEN` | Gmail API OAuth (token expires every 7 days in Testing mode) |
 | `ADMIN_EMAILS` | Comma-separated admin emails allowed into the admin panel |
 
 - Startup auto-runs: database table creation, question seeding (if empty), admin-user bootstrap, and column migrations.
@@ -124,18 +126,41 @@ The trained artifact is `mlmodel/model.pkl`; the college dataset lives in `mlmod
   ```
 - Set the env vars from the table above in the Render dashboard.
 
-## Email / tokens (ops note)
-The backend sends email via the Gmail API. The OAuth **refresh token** used for email expires every 7 days while the Google app is in "Testing" mode. When email stops sending, re-run:
-```bash
-python scripts/get_gmail_token.py
-```
-and update `GOOGLE_REFRESH_TOKEN` in Render. There are also diagnostics endpoints (see `/docs`) to verify email config without sending mail.
+### Database permanence (why it broke, and how to keep it)
+The Aiven free MySQL instance got **deleted/paused and its hostname disappeared**, which bricked signup/login/admin + emailed (everything writes to the DB first). The backend keeps working with **your own MySQL** — you can keep your existing local/hosted MySQL (no code change): set `DATABASE_URL=mysql+mysqlconnector://user:pass@host:3306/name` and all auth/result flows just work.
+
+Two ways to run it, depending on where the backend lives:
+- **Backend runs on your own machine / VPS (localhost MySQL)** → your MySQL *is* the permanent store. Nothing else needed.
+- **Backend on Render (cloud)** → Render cannot reach `localhost` on your PC. For the live site you need a DB host Render can reach, either:
+  - **Neon (free Postgres)** — permanent hostname, never deleted: `DATABASE_URL=<neon connection string>`. First boot auto-creates tables, seeds questions and bootstraps the admin (`aimroute.noreply@gmail.com` / `Admin@123`), or
+  - any **MySQL** host with a stable hostname (paid/self-hosted) — point `DATABASE_URL` at it.
+
+Avoid free Aiven for the live app — its hostname can vanish at any time.
+
+## Email / sending (recommended: Brevo API key — lifetime, no expiry)
+The Gmail API path needs a Google OAuth refresh token that **expires every 7 days** while the app is in Google "Testing" mode — that's the "emails stopped arriving" cause. Avoid it by using an **HTTPS email API with a permanent API key** (the backend already supports all of them):
+
+| Provider | Free limit | Env vars |
+|---|---|---|
+| **Brevo** (recommended) | 300/day | `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY`, `MAIL_FROM` |
+| SendGrid | 100/day | `EMAIL_PROVIDER=sendgrid`, `SENDGRID_API_KEY`, `MAIL_FROM` |
+| Resend | 100/day | `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `MAIL_FROM` |
+
+Setup for Brevo (one-time, permanent):
+1. Create a free account at `brevo.com` → API Keys → create a key → copy it.
+2. **Sender address:** Settings → Senders & IPs → verify `aimroute.noreply@gmail.com` (or any email you own) as a sender.
+3. On Render → backend → Environment:
+   - `EMAIL_PROVIDER=brevo`
+   - `BREVO_API_KEY=<your key>`
+   - `MAIL_FROM=<the verified sender, e.g. aimroute.noreply@gmail.com>` (defaults to `MAIL_USERNAME`)
+4. Deploy. Reset/forgot-password and result emails now send over HTTPS (port 443) — no Gmail token to refresh, ever.
+
+If you keep `EMAIL_PROVIDER=gmail` instead, re-run `python scripts/get_gmail_token.py` and update `GOOGLE_REFRESH_TOKEN` in Render every 7 days.
 
 ## API overview
 - `POST /auth/register`, `/auth/login`, `/auth/forgot-password`, `/auth/reset-password`
-- `GET/POST` user endpoints under `/users/*` (profile, password, account)
+- `GET /users/me`, `POST /users/change-password`, `POST /users/verify-password`, `DELETE /users/me`
 - `GET /quiz/?level=...` — questions for a level
-- `POST /quiz/submit` — submit answers → careers
 - `POST /results/save`, `GET /results/my`, `DELETE /results/{id}`, `DELETE /results/clear`
 - `GET /dashboard/` — stats + history for the current user
 - `GET /colleges/suggest` — filtered college suggestions

@@ -2,20 +2,12 @@ import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.database.connection import SessionLocal
+from app.database.connection import get_db
 from app.models.user_model import User
 from app.models.result_model import Result
 from app.utils.dependencies import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/")

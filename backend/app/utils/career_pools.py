@@ -183,10 +183,3 @@ ROADMAP_STEPS = {
     "grad": ["Graduation", "Entrance / Job Hunt", "PG / Certification", "Senior Role", "Career"],
     "pg":   ["PG Degree", "Specialisation", "Industry / Research", "Leadership", "Career"],
 }
-
-LEVEL_LABELS = {
-    "10th": {"title": "Recommended streams after 10th",   "subtitle": "Choose the path that fits your interests best"},
-    "12th": {"title": "Best degree options after 12th",   "subtitle": "Your stream + interest points to these degrees"},
-    "grad": {"title": "Your next best step after graduation", "subtitle": "PG programs, jobs, and Govt exam paths"},
-    "pg":   {"title": "Career paths after post graduation",   "subtitle": "Specialisation, research, and leadership roles"},
-}

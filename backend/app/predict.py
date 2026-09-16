@@ -1,22 +1,10 @@
-import pickle
 import numpy as np
 from fastapi import APIRouter
 from pydantic import BaseModel
-from pathlib import Path
 from typing import Optional
 from app.utils.career_pools import CAREER_POOLS, SALARY_RANGES
 
 router = APIRouter()
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-MODEL_PATH = BASE_DIR / "mlmodel" / "model.pkl"
-
-try:
-    with open(MODEL_PATH, "rb") as f:
-        ml_model = pickle.load(f)
-    ML_AVAILABLE = True
-except Exception:
-    ML_AVAILABLE = False
 
 
 class PredictRequest(BaseModel):

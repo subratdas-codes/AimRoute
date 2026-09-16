@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from app.database.connection import SessionLocal
+from app.database.connection import get_db
 from app.models.result_model import Result
 from app.models.user_model import User
 from app.utils.dependencies import get_current_user
@@ -16,14 +16,6 @@ from app.utils.activity import log_activity
 router = APIRouter(prefix="/results", tags=["Results"])
 
 DASHBOARD_URL = f"{os.getenv('FRONTEND_URL', 'https://aimroute.vercel.app')}/dashboard"
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # ── Save schema ───────────────────────────────────────────────
