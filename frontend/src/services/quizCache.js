@@ -1,4 +1,4 @@
-const PREFIX = "aimroute_quiz_";
+const PREFIX = "aimroute_quiz_v2_";
 const TTL = 7 * 24 * 60 * 60 * 1000;
 
 export function getQuizCache(level) {

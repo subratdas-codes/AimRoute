@@ -229,7 +229,7 @@ const levelLabel = { "10th": "After 10th", "12th": "After 12th", grad: "After Gr
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Dashboard
 // ═══════════════════════════════════════════════════════════════════════════════
-const DashboardSection = ({ onShowUsers }) => {
+const DashboardSection = ({ onShowUsers, onShowSection }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -277,9 +277,9 @@ const DashboardSection = ({ onShowUsers }) => {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Users" value={stats?.total_users} color="bg-purple-100 text-purple-600" icon="users" onClick={onShowUsers} />
-        <StatCard label="Quiz Results" value={stats?.total_results} color="bg-blue-100 text-blue-600" icon="results" />
-        <StatCard label="Questions" value={stats?.total_questions} color="bg-emerald-100 text-emerald-600" icon="questions" />
-        <StatCard label="Colleges" value={stats?.total_colleges} color="bg-orange-100 text-orange-600" icon="colleges" />
+        <StatCard label="Quiz Results" value={stats?.total_results} color="bg-blue-100 text-blue-600" icon="results" onClick={onShowSection ? () => onShowSection("results") : undefined} />
+        <StatCard label="Questions" value={stats?.total_questions} color="bg-emerald-100 text-emerald-600" icon="questions" onClick={onShowSection ? () => onShowSection("questions") : undefined} />
+        <StatCard label="Colleges" value={stats?.total_colleges} color="bg-orange-100 text-orange-600" icon="colleges" onClick={onShowSection ? () => onShowSection("colleges") : undefined} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -743,6 +743,7 @@ const QuestionsSection = ({ showToast }) => {
   ]);
   const [optForm, setOptForm] = useState({ option_text: "", category_tag: "", next_question_id: "" });
   const [confirm, setConfirm] = useState(null);
+  const [editOpts, setEditOpts] = useState([]);
 
   const load = useCallback(() => {
     adminService.getQuestions(levelFilter || undefined).then(r => setQuestions(r.data));
@@ -779,12 +780,20 @@ const QuestionsSection = ({ showToast }) => {
   };
 
   const handleEditQ = async () => {
+    if (!form.question_text.trim()) { showToast("Question text is required", "error"); return; }
     try {
       await adminService.updateQuestion(selected.id, {
         question_text: form.question_text,
         order_index: Number(form.order_index),
         is_start: form.is_start,
       });
+      const changed = editOpts.filter(o => {
+        const orig = (selected.options || []).find(x => x.id === o.id);
+        return orig && (orig.option_text !== o.option_text || orig.category_tag !== o.category_tag);
+      });
+      await Promise.all(changed.map(o =>
+        adminService.updateOption(o.id, { option_text: o.option_text, category_tag: o.category_tag })
+      ));
       showToast("Question updated!", "success");
       setModal(null);
       load();
@@ -862,7 +871,7 @@ const QuestionsSection = ({ showToast }) => {
                 <p className="text-xs text-gray-400 mt-1">{q.options?.length || 0} options</p>
               </div>
               <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                <button onClick={e => { e.stopPropagation(); setSelected(q); setForm({ level: q.level, question_text: q.question_text, order_index: q.order_index, is_start: q.is_start }); setModal("editQ"); }}
+                <button onClick={e => { e.stopPropagation(); setSelected(q); setForm({ level: q.level, question_text: q.question_text, order_index: q.order_index, is_start: q.is_start }); setEditOpts((q.options || []).map(o => ({ id: o.id, option_text: o.option_text, category_tag: o.category_tag }))); setModal("editQ"); }}
                   className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500">
                   <Icon name="edit" />
                 </button>
@@ -985,6 +994,37 @@ const QuestionsSection = ({ showToast }) => {
               <input type="checkbox" checked={form.is_start} onChange={e => setForm(f => ({ ...f, is_start: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
               <span className="text-gray-700">Is Start Question</span>
             </label>
+
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Answer Options <span className="text-xs font-normal text-gray-400">(one per category)</span></p>
+              {editOpts.length === 0 ? (
+                <p className="text-xs text-gray-400">No options yet — expand the question to add options.</p>
+              ) : (
+                <div className="space-y-2">
+                  {editOpts.map((opt, i) => (
+                    <div key={opt.id} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-gray-50 rounded-xl p-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <input
+                        placeholder={`Option ${String.fromCharCode(65 + i)} text`}
+                        value={opt.option_text}
+                        onChange={e => setEditOpts(list => list.map((o, idx) => idx === i ? { ...o, option_text: e.target.value } : o))}
+                        className="flex-1 w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <select
+                        value={opt.category_tag}
+                        onChange={e => setEditOpts(list => list.map((o, idx) => idx === i ? { ...o, category_tag: e.target.value } : o))}
+                        className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        {["Technology", "Business", "Creative", "Healthcare"].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button onClick={handleEditQ} className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
               Save Changes
             </button>
@@ -1616,7 +1656,7 @@ export default function AdminPanel() {
         </header>
 
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          {section === "dashboard" && <DashboardSection onShowUsers={() => setSection("users")} />}
+          {section === "dashboard" && <DashboardSection onShowUsers={() => setSection("users")} onShowSection={(k) => setSection(k)} />}
           {section === "users"     && <UsersSection showToast={showToast} />}
           {section === "activity"  && <ActivitySection />}
           {section === "questions" && <QuestionsSection showToast={showToast} />}
