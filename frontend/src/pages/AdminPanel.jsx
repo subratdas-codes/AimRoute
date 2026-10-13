@@ -122,6 +122,12 @@ const Icon = ({ name }) => {
         <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
       </svg>
     ),
+    settings: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    ),
   };
   return icons[name] || null;
 };
@@ -936,6 +942,92 @@ const QuestionsSection = ({ showToast }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SECTION: Quiz Settings
+// ═══════════════════════════════════════════════════════════════════════════════
+const QuizSettingsSection = ({ showToast }) => {
+  const [counts, setCounts] = useState({ "10th": 20, "12th": 20, grad: 20, pg: 20 });
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(() => {
+    adminService.getQuizSettings()
+      .then(r => {
+        const cfg = r.data || {};
+        setCounts({
+          "10th": cfg["10th"] ?? 20,
+          "12th": cfg["12th"] ?? 20,
+          grad:   cfg.grad   ?? 20,
+          pg:     cfg.pg     ?? 20,
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {};
+      for (const [lvl, val] of Object.entries(counts)) {
+        const n = Math.max(1, Math.min(Number(val) || 20, 100));
+        payload[lvl] = n;
+        setCounts(c => ({ ...c, [lvl]: n }));
+      }
+      await adminService.updateQuizSettings(payload);
+      showToast("Quiz settings saved!", "success");
+    } catch (e) {
+      showToast(e.response?.data?.detail || "Error saving settings", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 p-6">
+        <h3 className="font-bold text-gray-800 mb-1">Questions Shown Per Quiz</h3>
+        <p className="text-sm text-gray-500 mb-5">
+          Choose how many questions a user attempts for each level. Every attempt is freshly
+          shuffled. Each level has a 100-question pool. (Default is 20.)
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            ["10th", "After 10th", "bg-blue-50 border-blue-100"],
+            ["12th", "After 12th", "bg-green-50 border-green-100"],
+            ["grad", "After Graduation", "bg-orange-50 border-orange-100"],
+            ["pg", "After PG", "bg-purple-50 border-purple-100"],
+          ].map(([lvl, label, boxClass]) => (
+            <div key={lvl} className={`${boxClass} rounded-2xl p-4 border`}>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min="1" max="100"
+                  value={counts[lvl]}
+                  onChange={e => setCounts(c => ({ ...c, [lvl]: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-400 flex-shrink-0">Q</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">out of 100 in pool</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 flex items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Quiz Settings"}
+          </button>
+          <span className="text-xs text-gray-400">Changes apply to new quiz attempts immediately.</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Results (Grouped by user)
 // ═══════════════════════════════════════════════════════════════════════════════
 const ResultsSection = ({ showToast }) => {
@@ -1359,6 +1451,7 @@ const SECTIONS = [
   { key: "users",     label: "Users",     icon: "users"     },
   { key: "activity",  label: "Activity",  icon: "eye"       },
   { key: "questions", label: "Questions", icon: "questions" },
+  { key: "settings",  label: "Quiz Settings", icon: "settings" },
   { key: "results",   label: "Results",   icon: "results"   },
   { key: "colleges",  label: "Colleges",  icon: "colleges"  },
 ];
@@ -1465,6 +1558,7 @@ export default function AdminPanel() {
           {section === "users"     && <UsersSection showToast={showToast} />}
           {section === "activity"  && <ActivitySection />}
           {section === "questions" && <QuestionsSection showToast={showToast} />}
+          {section === "settings"  && <QuizSettingsSection showToast={showToast} />}
           {section === "results"   && <ResultsSection showToast={showToast} />}
           {section === "colleges"  && <CollegesSection showToast={showToast} />}
         </main>

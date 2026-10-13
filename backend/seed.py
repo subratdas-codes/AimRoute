@@ -768,6 +768,9 @@ def seed_questions(db=None):
         },
     ]
 
+    from app.utils.question_bank import EXTRA_QUESTIONS
+    questions_data.extend(EXTRA_QUESTIONS)
+
     for q_data in questions_data:
         question = Question(
             id=q_data["id"],
@@ -790,7 +793,8 @@ def seed_questions(db=None):
 
     db.commit()
     print(f"Questions seeded - {len(questions_data)} questions across 4 levels")
-    print("Each student gets 9-10 questions personalised to their answers")
+    from app.utils.question_bank import TARGET_PER_LEVEL
+    print(f"Each level now has a {TARGET_PER_LEVEL}-question pool; every quiz picks fresh shuffled questions")
 
 if __name__ == "__main__":
     print("Seeding questions...")

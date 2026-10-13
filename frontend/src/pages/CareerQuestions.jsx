@@ -5,16 +5,17 @@ import { getQuizCache, setQuizCache } from "../services/quizCache";
 import { useAuth }  from "../context/AuthContext";
 import Footer from "../components/Footer";
 
-function buildQuizFromPool(pool) {
+function buildQuizFromPool(pool, count) {
   const ordered = pool.slice();
   for (let i = ordered.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
   }
-  return ordered.slice(0, 12 + Math.floor(Math.random() * 5)); // 12–16 random questions
+  // Every visit picks a fresh, randomised quiz of `count` questions (admin-configurable, default 20)
+  return ordered.slice(0, Math.min(count, ordered.length));
 }
 
-const MAX_QUESTIONS = 16;
+const MAX_QUESTIONS = 20;
 
 // ── Motivational messages ─────────────────────────────────────
 const GENERIC_MESSAGES = [
@@ -416,17 +417,28 @@ export default function CareerQuestions() {
 
   useEffect(() => {
     let cancelled = false;
+    let quizCount = MAX_QUESTIONS;
 
     const applyPool = (pool) => {
       const ordered = pool.filter(q => !q.is_start);
       if (!ordered.length) return false;
-      const picked = buildQuizFromPool(ordered);
+      const picked = buildQuizFromPool(ordered, quizCount);
       setQuestions(picked);
       setCurIdx(0);
       setCurrentQuestion(picked[0] || null);
       setLoading(false);
       return true;
     };
+
+    API.get("/quiz/config")
+      .then(r => {
+        if (cancelled) return;
+        const configCount = r.data && r.data[level];
+        if (configCount && Number.isFinite(Number(configCount))) {
+          quizCount = Math.max(1, Math.min(Number(configCount), 100));
+        }
+      })
+      .catch(() => {});
 
     const cachedPool = getQuizCache(level);
     const usedCache  = cachedPool ? applyPool(cachedPool) : false;

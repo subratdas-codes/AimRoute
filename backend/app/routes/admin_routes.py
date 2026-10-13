@@ -457,6 +457,48 @@ def delete_option(option_id: int, db: Session = Depends(get_db), admin=Depends(r
     return {"message": "Option deleted"}
 
 
+# ─── Quiz Settings (per-level question count) ──────────────────────────────────
+
+class QuizSettingsUpdate(BaseModel):
+    question_count: Optional[dict] = None  # {"10th": 20, "12th": 30, "grad": 20, "pg": 20}
+
+
+@router.get("/quiz-settings")
+def get_quiz_settings(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    from app.models.quiz_setting_model import QuizSetting
+    entries = db.query(QuizSetting).all()
+    config = {row.level: row.question_count for row in entries}
+    for level in ["10th", "12th", "grad", "pg"]:
+        config.setdefault(level, 20)
+    return config
+
+
+@router.put("/quiz-settings")
+def update_quiz_settings(body: QuizSettingsUpdate, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    from app.models.quiz_setting_model import QuizSetting
+    counts = body.question_count or {}
+    for level, count in counts.items():
+        if level not in ["10th", "12th", "grad", "pg"]:
+            continue
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            continue
+        count = max(1, min(count, 100))
+        row = db.query(QuizSetting).filter(QuizSetting.level == level).first()
+        if row:
+            row.question_count = count
+        else:
+            db.add(QuizSetting(level=level, question_count=count))
+    db.commit()
+
+    entries = db.query(QuizSetting).all()
+    config = {row.level: row.question_count for row in entries}
+    for level in ["10th", "12th", "grad", "pg"]:
+        config.setdefault(level, 20)
+    return config
+
+
 # ─── Results CRUD ─────────────────────────────────────────────────────────────
 
 @router.get("/results")

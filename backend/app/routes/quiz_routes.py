@@ -2,8 +2,18 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.question_model import Question, QuestionOption
+from app.models.quiz_setting_model import QuizSetting
 
 router = APIRouter()
+
+# ── GET QUIZ CONFIG (per-level question count, admin-configurable) ──
+@router.get("/config")
+def get_quiz_config(db: Session = Depends(get_db)):
+    entries = db.query(QuizSetting).all()
+    config = {row.level: row.question_count for row in entries}
+    for level in ["10th", "12th", "grad", "pg"]:
+        config.setdefault(level, 20)
+    return config
 
 # ── GET QUESTIONS (no auth required) ─────────────────────
 @router.get("/")

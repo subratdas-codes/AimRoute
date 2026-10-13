@@ -31,6 +31,10 @@ export const createOption = (data) => api.post("/admin/options", data);
 export const updateOption = (id, data) => api.put(`/admin/options/${id}`, data);
 export const deleteOption = (id) => api.delete(`/admin/options/${id}`);
 
+// ─── Quiz Settings (per-level question count) ────────────────────────────────
+export const getQuizSettings = () => api.get("/admin/quiz-settings");
+export const updateQuizSettings = (question_count) => api.put("/admin/quiz-settings", { question_count });
+
 // ─── Results ─────────────────────────────────────────────────────────────────
 export const getResults = (params) => api.get("/admin/results", { params });
 export const getResultsGrouped = (params) => api.get("/admin/results/grouped", { params });
