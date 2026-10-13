@@ -735,6 +735,12 @@ const QuestionsSection = ({ showToast }) => {
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({ level: "10th", question_text: "", order_index: 0, is_start: false });
+  const [createOpts, setCreateOpts] = useState([
+    { option_text: "", category_tag: "Technology" },
+    { option_text: "", category_tag: "Business" },
+    { option_text: "", category_tag: "Creative" },
+    { option_text: "", category_tag: "Healthcare" },
+  ]);
   const [optForm, setOptForm] = useState({ option_text: "", category_tag: "", next_question_id: "" });
   const [confirm, setConfirm] = useState(null);
 
@@ -744,11 +750,30 @@ const QuestionsSection = ({ showToast }) => {
 
   useEffect(() => { load(); }, [load]);
 
+  const resetCreateForm = () => {
+    setForm({ level: "10th", question_text: "", order_index: 0, is_start: false });
+    setCreateOpts([
+      { option_text: "", category_tag: "Technology" },
+      { option_text: "", category_tag: "Business" },
+      { option_text: "", category_tag: "Creative" },
+      { option_text: "", category_tag: "Healthcare" },
+    ]);
+  };
+
   const handleCreateQ = async () => {
+    if (!form.question_text.trim()) { showToast("Question text is required", "error"); return; }
+    const opts = createOpts.filter(o => o.option_text.trim());
     try {
-      await adminService.createQuestion({ ...form, order_index: Number(form.order_index) });
-      showToast("Question created!", "success");
+      await adminService.createQuestion({
+        level: form.level,
+        question_text: form.question_text,
+        order_index: Number(form.order_index) || 0,
+        is_start: form.is_start,
+        options: opts.map(o => ({ option_text: o.option_text.trim(), category_tag: o.category_tag })),
+      });
+      showToast(`Question created with ${opts.length} option(s)!`, "success");
       setModal(null);
+      resetCreateForm();
       load();
     } catch { showToast("Error creating question", "error"); }
   };
@@ -810,12 +835,18 @@ const QuestionsSection = ({ showToast }) => {
           ))}
         </div>
         <button
-          onClick={() => { setForm({ level: "10th", question_text: "", order_index: 0, is_start: false }); setModal("createQ"); }}
+          onClick={() => { resetCreateForm(); setModal("createQ"); }}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 whitespace-nowrap"
         >
           <Icon name="plus" /> Add Question
         </button>
       </div>
+
+      <p className="text-sm text-gray-500">
+        {levelFilter
+          ? `Showing all ${questions.length} questions in ${levelLabel[levelFilter] || levelFilter}`
+          : `Showing all ${questions.length} questions across every level`}
+      </p>
 
       <div className="space-y-3">
         {questions.map(q => (
@@ -891,20 +922,51 @@ const QuestionsSection = ({ showToast }) => {
         <Modal title="Create Question" onClose={() => setModal(null)}>
           <div className="space-y-4">
             <Select label="Level" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))}>
-              {["10th", "12th", "grad", "pg"].map(l => <option key={l} value={l}>{l === "grad" ? "Graduation" : l}</option>)}
+              {["10th", "12th", "grad", "pg"].map(l => <option key={l} value={l}>{l === "grad" ? "Graduation" : l === "pg" ? "Post Graduation" : l}</option>)}
             </Select>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
               <textarea rows={3} value={form.question_text} onChange={e => setForm(f => ({ ...f, question_text: e.target.value }))}
+                placeholder="e.g. If you had a free Saturday, what would you most like to do?"
                 className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
             </div>
-            <Field label="Order Index" type="number" value={form.order_index} onChange={e => setForm(f => ({ ...f, order_index: e.target.value }))} />
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" checked={form.is_start} onChange={e => setForm(f => ({ ...f, is_start: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
-              <span className="text-gray-700">Is Start Question</span>
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Order Index" type="number" value={form.order_index} onChange={e => setForm(f => ({ ...f, order_index: e.target.value }))} />
+              <label className="flex items-end gap-2 text-sm cursor-pointer pb-2">
+                <input type="checkbox" checked={form.is_start} onChange={e => setForm(f => ({ ...f, is_start: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
+                <span className="text-gray-700">Is Start Question</span>
+              </label>
+            </div>
+
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Answer Options <span className="text-xs font-normal text-gray-400">(one per category)</span></p>
+              <div className="space-y-2">
+                {createOpts.map((opt, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-gray-50 rounded-xl p-2.5">
+                    <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    <input
+                      placeholder={`Option ${String.fromCharCode(65 + i)} text`}
+                      value={opt.option_text}
+                      onChange={e => setCreateOpts(list => list.map((o, idx) => idx === i ? { ...o, option_text: e.target.value } : o))}
+                      className="flex-1 w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <select
+                      value={opt.category_tag}
+                      onChange={e => setCreateOpts(list => list.map((o, idx) => idx === i ? { ...o, category_tag: e.target.value } : o))}
+                      className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      {["Technology", "Business", "Creative", "Healthcare"].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">Options left blank are skipped. Category tags drive the career match.</p>
+            </div>
+
             <button onClick={handleCreateQ} className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
-              Create Question
+              Add Question
             </button>
           </div>
         </Modal>

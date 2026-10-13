@@ -670,7 +670,11 @@ export default function CareerQuestions() {
   );
 
   // ── QUIZ ──────────────────────────────────────────────────────
-  const progress = Math.min((stepCount / (questions.length || MAX_QUESTIONS)) * 100, 100);
+  // stepCount = questions already answered. On the final question the
+  // percentage must read 100% (e.g. Q20/20 → 100%), and 0% before Q1.
+  const progress = questions.length
+    ? Math.min(Math.round(((stepCount + 1) / questions.length) * 100), 100)
+    : 0;
 
   return (
     <div style={pageWrap}>

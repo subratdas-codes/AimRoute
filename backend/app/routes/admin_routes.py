@@ -50,6 +50,7 @@ class QuestionCreate(BaseModel):
     question_text: str
     order_index: int
     is_start: bool = False
+    options: Optional[list] = None  # [{option_text, category_tag, next_question_id?}]
 
 class QuestionUpdate(BaseModel):
     question_text: Optional[str] = None
@@ -389,9 +390,20 @@ def create_question(body: QuestionCreate, db: Session = Depends(get_db), admin=D
     q = Question(level=body.level, question_text=body.question_text,
                  order_index=body.order_index, is_start=body.is_start)
     db.add(q)
+    db.flush()
+
+    for opt in (body.options or []):
+        db.add(QuestionOption(
+            question_id=q.id,
+            option_text=opt.get("option_text"),
+            category_tag=opt.get("category_tag"),
+            next_question_id=opt.get("next_question_id")
+        ))
+
     db.commit()
     db.refresh(q)
-    return {"id": q.id, "level": q.level, "question_text": q.question_text}
+    return {"id": q.id, "level": q.level, "question_text": q.question_text,
+            "options": len(body.options or [])}
 
 
 @router.put("/questions/{question_id}")
