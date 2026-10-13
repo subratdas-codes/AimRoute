@@ -1295,33 +1295,34 @@ const ResultsSection = ({ showToast }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION: Colleges
 // ═══════════════════════════════════════════════════════════════════════════════
-const CollegesSection = ({ showToast }) => {
+const CollegesSection = () => {
   const [colleges, setColleges] = useState([]);
   const [total, setTotal] = useState(0);
   const [skip, setSkip] = useState(0);
   const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-  const [selected, setSelected] = useState(null);
-  const [form, setForm] = useState({ name: "", stream: "", state: "", type: "", min_percentage: "", medium: "English", gender: "Co-ed", fees_lpa: "", courses: "", ranking: "" });
-  const [confirm, setConfirm] = useState(null);
+  const [stateFilter, setStateFilter] = useState("");
+  const [states, setStates] = useState([]);
   const [groupByState, setGroupByState] = useState(false);
   const [allColleges, setAllColleges] = useState([]);
-  const limit = 10;
+  const limit = 15;
 
   const load = useCallback(() => {
     const params = { skip, limit };
     if (search) params.search = search;
+    if (stateFilter) params.state = stateFilter;
     adminService.getColleges(params).then(r => {
-      setColleges(r.data.colleges);
-      setTotal(r.data.total);
+      setColleges(r.data.colleges || []);
+      setTotal(r.data.total || 0);
+      if (Array.isArray(r.data.states)) setStates(r.data.states);
     });
-  }, [skip, search]);
+  }, [skip, search, stateFilter]);
 
   const loadAll = useCallback(() => {
     const params = { skip: 0, limit: 10000 };
     if (search) params.search = search;
+    if (stateFilter) params.state = stateFilter;
     adminService.getColleges(params).then(r => setAllColleges(r.data.colleges || []));
-  }, [search]);
+  }, [search, stateFilter]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1336,83 +1337,23 @@ const CollegesSection = ({ showToast }) => {
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
   }, [allColleges]);
 
-  const blankForm = { name: "", stream: "", state: "", type: "", min_percentage: "", medium: "English", gender: "Co-ed", fees_lpa: "", courses: "", ranking: "" };
-
-  const toPayload = (f) => ({
-    name: f.name, stream: f.stream || null, state: f.state || null, type: f.type || null,
-    min_percentage: f.min_percentage ? Number(f.min_percentage) : null,
-    medium: f.medium || null, gender: f.gender || null,
-    fees_lpa: f.fees_lpa ? Number(f.fees_lpa) : null,
-    courses: f.courses || null, ranking: f.ranking ? Number(f.ranking) : null,
-  });
-
-  const handleCreate = async () => {
-    try {
-      await adminService.createCollege(toPayload(form));
-      showToast("College created!", "success");
-      setModal(null);
-      setForm(blankForm);
-      load();
-    } catch { showToast("Error creating college", "error"); }
-  };
-
-  const handleEdit = async () => {
-    try {
-      await adminService.updateCollege(selected.id, toPayload(form));
-      showToast("College updated!", "success");
-      setModal(null);
-      load();
-    } catch { showToast("Error updating college", "error"); }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await adminService.deleteCollege(id);
-      showToast("College deleted!", "success");
-      setConfirm(null);
-      load();
-    } catch { showToast("Error deleting college", "error"); }
-  };
-
-  const CollegeForm = ({ onSubmit, label }) => (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2"><Field label="College Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-        <Field label="Stream" value={form.stream} onChange={e => setForm(f => ({ ...f, stream: e.target.value }))} placeholder="Engineering, Medical..." />
-        <Field label="State" value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} />
-        <Field label="Type" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} placeholder="Government, Private..." />
-        <Field label="Min Percentage" type="number" value={form.min_percentage} onChange={e => setForm(f => ({ ...f, min_percentage: e.target.value }))} />
-        <Select label="Medium" value={form.medium} onChange={e => setForm(f => ({ ...f, medium: e.target.value }))}>
-          {["English","Hindi","Tamil","Telugu","Kannada","Malayalam","Marathi","Bengali","Gujarati","Bilingual"].map(m => <option key={m}>{m}</option>)}
-        </Select>
-        <Select label="Gender" value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
-          {["Co-ed","Women","Men"].map(g => <option key={g}>{g}</option>)}
-        </Select>
-        <Field label="Fees (LPA)" type="number" value={form.fees_lpa} onChange={e => setForm(f => ({ ...f, fees_lpa: e.target.value }))} />
-        <Field label="Ranking" type="number" value={form.ranking} onChange={e => setForm(f => ({ ...f, ranking: e.target.value }))} />
-        <div className="col-span-2"><Field label="Courses" value={form.courses} onChange={e => setForm(f => ({ ...f, courses: e.target.value }))} placeholder="B.Tech, MBA, MBBS..." /></div>
-      </div>
-      <button onClick={onSubmit} className="w-full py-2.5 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700">
-        {label}
-      </button>
-    </div>
-  );
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative w-full sm:w-72">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Icon name="search" /></span>
-          <input placeholder="Search colleges..." value={search}
+          <input placeholder="Search colleges, city or state..." value={search}
             onChange={e => { setSearch(e.target.value); setSkip(0); }}
             className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
         </div>
-        <button
-          onClick={() => { setForm(blankForm); setModal("create"); }}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 whitespace-nowrap"
+        <select
+          value={stateFilter}
+          onChange={e => { setStateFilter(e.target.value); setSkip(0); }}
+          className="w-full sm:w-56 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
-          <Icon name="plus" /> Add College
-        </button>
+          <option value="">All States / UTs</option>
+          {states.map(s => <option key={s.state} value={s.state}>{s.state} ({s.count})</option>)}
+        </select>
       </div>
 
       <div className="flex items-center gap-2">
@@ -1441,18 +1382,10 @@ const CollegesSection = ({ showToast }) => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-800 truncate">{c.name}</p>
                       <p className="text-xs text-gray-400 truncate">
-                        {[c.stream, c.type, c.min_percentage ? `${c.min_percentage}% cutoff` : null].filter(Boolean).join(" · ") || "—"}
+                        {[c.city, c.stream, c.min_percentage ? `${c.min_percentage}% cutoff` : null, c.fees_lpa != null ? `₹${c.fees_lpa}L` : null].filter(Boolean).join(" · ") || "—"}
                       </p>
                     </div>
-                    <button onClick={() => {
-                      setSelected(c);
-                      setForm({ name: c.name, stream: c.stream || "", state: c.state || "", type: c.type || "",
-                        min_percentage: c.min_percentage || "", medium: c.medium || "English",
-                        gender: c.gender || "Co-ed", fees_lpa: c.fees_lpa || "", courses: c.courses || "", ranking: c.ranking || "" });
-                      setModal("edit");
-                    }} className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500">
-                      <Icon name="edit" />
-                    </button>
+                    <Badge text={c.medium || "English"} color="blue" />
                   </div>
                 ))}
               </div>
@@ -1471,41 +1404,27 @@ const CollegesSection = ({ showToast }) => {
             <tr>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Name</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">State</th>
+              <th className="text-left px-5 py-3 text-gray-500 font-medium">City</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Stream</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Cutoff</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Medium</th>
               <th className="text-left px-5 py-3 text-gray-500 font-medium">Gender</th>
-              <th className="text-right px-5 py-3 text-gray-500 font-medium">Actions</th>
+              <th className="text-left px-5 py-3 text-gray-500 font-medium">Fees</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {colleges.map(c => (
               <tr key={c.id} className="hover:bg-gray-50/50">
-                <td className="px-5 py-3 font-medium text-gray-800 max-w-[180px] truncate">{c.name}</td>
+                <td className="px-5 py-3 font-medium text-gray-800 max-w-[220px] truncate">{c.name}</td>
                 <td className="px-5 py-3 text-gray-600">{c.state || "—"}</td>
+                <td className="px-5 py-3 text-gray-600">{c.city || "—"}</td>
                 <td className="px-5 py-3 text-gray-600 max-w-[120px] truncate">{c.stream || "—"}</td>
                 <td className="px-5 py-3 text-gray-600">{c.min_percentage ? `${c.min_percentage}%` : "—"}</td>
                 <td className="px-5 py-3"><Badge text={c.medium || "English"} color="blue" /></td>
                 <td className="px-5 py-3">
                   <Badge text={c.gender || "Co-ed"} color={c.gender === "Women" ? "pink" : c.gender === "Men" ? "blue" : "gray"} />
                 </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => {
-                      setSelected(c);
-                      setForm({ name: c.name, stream: c.stream || "", state: c.state || "", type: c.type || "",
-                        min_percentage: c.min_percentage || "", medium: c.medium || "English",
-                        gender: c.gender || "Co-ed", fees_lpa: c.fees_lpa || "", courses: c.courses || "", ranking: c.ranking || "" });
-                      setModal("edit");
-                    }} className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500">
-                      <Icon name="edit" />
-                    </button>
-                    <button onClick={() => setConfirm({ id: c.id, label: c.name })}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-red-400">
-                      <Icon name="trash" />
-                    </button>
-                  </div>
-                </td>
+                <td className="px-5 py-3 text-gray-600">{c.fees_lpa != null ? `₹${c.fees_lpa}L` : "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -1516,7 +1435,7 @@ const CollegesSection = ({ showToast }) => {
               <Icon name="colleges" />
             </div>
             <p className="text-gray-500 font-medium">No colleges found</p>
-            <p className="text-gray-400 text-sm mt-1">Add your first college using the button above</p>
+            <p className="text-gray-400 text-sm mt-1">Try a different search or state filter</p>
           </div>
         )}
       </div>
@@ -1524,7 +1443,7 @@ const CollegesSection = ({ showToast }) => {
 
       {!groupByState && (
       <div className="flex items-center justify-between text-sm text-gray-500">
-        <span>Showing {skip + 1}–{Math.min(skip + limit, total)} of {total}</span>
+        <span>Showing {total === 0 ? 0 : skip + 1}–{Math.min(skip + limit, total)} of {total} colleges</span>
         <div className="flex gap-2">
           <button disabled={skip === 0} onClick={() => setSkip(s => Math.max(0, s - limit))}
             className="px-3 py-1.5 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50">Prev</button>
@@ -1532,20 +1451,6 @@ const CollegesSection = ({ showToast }) => {
             className="px-3 py-1.5 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next</button>
         </div>
       </div>
-      )}
-
-      {modal === "create" && (
-        <Modal title="Add College" onClose={() => setModal(null)}>
-          <CollegeForm onSubmit={handleCreate} label="Create College" />
-        </Modal>
-      )}
-      {modal === "edit" && (
-        <Modal title="Edit College" onClose={() => setModal(null)}>
-          <CollegeForm onSubmit={handleEdit} label="Save Changes" />
-        </Modal>
-      )}
-      {confirm && (
-        <Confirm message={`Delete "${confirm.label}"?`} onConfirm={() => handleDelete(confirm.id)} onCancel={() => setConfirm(null)} />
       )}
     </div>
   );
@@ -1734,7 +1639,7 @@ export default function AdminPanel() {
           {section === "questions" && <QuestionsSection showToast={showToast} />}
           {section === "settings"  && <QuizSettingsSection showToast={showToast} />}
           {section === "results"   && <ResultsSection showToast={showToast} />}
-          {section === "colleges"  && <CollegesSection showToast={showToast} />}
+          {section === "colleges"  && <CollegesSection />}
         </main>
       </div>
 

@@ -18,16 +18,21 @@ def get_college_df():
             return _df
 
         print(f"[Colleges] Loading CSV from: {_csv_path}")
+        base_cols = ["college_name", "city", "state", "nirf_rank",
+                     "nirf_score", "category", "min_cutoff", "medium", "gender"]
+        extra_cols = ["fees_lpa", "avg_package_lpa"]
         try:
             frame = pd.read_csv(
                 _csv_path,
-                usecols=["college_name", "city", "state", "nirf_rank",
-                         "nirf_score", "category", "min_cutoff", "medium", "gender"],
+                usecols=base_cols + extra_cols,
                 engine="c",
             )
-        except Exception as e:
-            print(f"[Colleges] Could not load CSV, using curated fallback: {e}")
-            frame = _fallback_frame()
+        except Exception:
+            try:
+                frame = pd.read_csv(_csv_path, usecols=base_cols, engine="c")
+            except Exception as e:
+                print(f"[Colleges] Could not load CSV, using curated fallback: {e}")
+                frame = _fallback_frame()
 
         if "college_name" in frame and "Address:" in str(frame["college_name"].iloc[0] if len(frame) else ""):
             frame["college_name"] = frame["college_name"].astype(str).str.split("Address:", n=1).str[0].str.strip()
@@ -194,3 +199,115 @@ def suggest_colleges(
 
     result = combined[keep].fillna("").to_dict(orient="records")
     return result
+
+
+# ─── Admin catalogue (read-only view of the full college dataset) ─────────────
+
+_admin_df = None
+_admin_lock = threading.Lock()
+
+
+def _as_number(value):
+    try:
+        if value is None:
+            return None
+        f = float(value)
+        if f != f:  # NaN
+            return None
+        return f
+    except (TypeError, ValueError):
+        return None
+
+
+def get_admin_college_df():
+    """Cleaned, de-duplicated list of every real college in the dataset."""
+    global _admin_df
+    if _admin_df is not None:
+        return _admin_df
+    with _admin_lock:
+        if _admin_df is not None:
+            return _admin_df
+
+        df = get_college_df()
+        name = df["college_name"].fillna("").astype(str).str.strip()
+        cat = df["category"].fillna("").astype(str).str.strip() if "category" in df.columns else pd.Series("", index=df.index)
+        state = df["state"].fillna("").astype(str).str.strip() if "state" in df.columns else pd.Series("", index=df.index)
+
+        mask = (name != "") & (cat != "") & (state != "")
+
+        df = df.loc[mask].copy()
+        df["college_name"] = name[mask].values
+        df["category"] = cat[mask].values
+        df["state"] = state[mask].values
+
+        df = df.drop_duplicates(subset=["college_name", "state", "category"]).reset_index(drop=True)
+        df.insert(0, "cid", df.index)
+
+        _admin_df = df
+        print(f"[Colleges] Admin catalogue: {len(_admin_df)} colleges across {_admin_df['state'].nunique()} states/UTs")
+        return _admin_df
+
+
+def college_catalogue_count():
+    return len(get_admin_college_df())
+
+
+def college_state_counts():
+    df = get_admin_college_df()
+    counts = df["state"].value_counts()
+    return [{"state": s, "count": int(c)} for s, c in counts.items()]
+
+
+def list_colleges(search=None, state=None, skip=0, limit=50):
+    """Return (total, records) for the admin college directory."""
+    df = get_admin_college_df()
+
+    if state and state.strip() and state.strip().lower() not in ("all", "all states"):
+        df = df[df["state"].str.lower() == state.strip().lower()]
+
+    if search:
+        s = search.strip().lower()
+        name_hit = df["college_name"].str.lower().str.contains(s, na=False)
+        city_hit = df["city"].fillna("").astype(str).str.lower().str.contains(s, na=False) if "city" in df.columns else False
+        state_hit = df["state"].str.lower().str.contains(s, na=False)
+        df = df[name_hit | city_hit | state_hit]
+
+    total = int(len(df))
+    try:
+        skip = max(0, int(skip))
+    except (TypeError, ValueError):
+        skip = 0
+    try:
+        limit = max(1, int(limit))
+    except (TypeError, ValueError):
+        limit = 50
+
+    window = df.iloc[skip: skip + limit]
+
+    def _val(row, col):
+        if col not in window.columns:
+            return None
+        v = row[col]
+        if isinstance(v, float) and v != v:
+            return None
+        if v is None or (isinstance(v, str) and v.strip() == ""):
+            return None
+        return v
+
+    records = []
+    for _, row in window.iterrows():
+        records.append({
+            "id": f"c{int(row['cid'])}",
+            "name": row.get("college_name"),
+            "city": _val(row, "city"),
+            "state": row.get("state"),
+            "stream": _val(row, "category"),
+            "min_percentage": _as_number(_val(row, "min_cutoff")),
+            "medium": _val(row, "medium"),
+            "gender": _val(row, "gender"),
+            "fees_lpa": _as_number(_val(row, "fees_lpa")),
+            "ranking": _as_number(_val(row, "nirf_rank")),
+            "type": None,
+            "courses": None,
+        })
+    return total, records

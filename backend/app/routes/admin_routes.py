@@ -100,7 +100,11 @@ def get_admin_stats(db: Session = Depends(get_db), admin=Depends(require_admin))
     total_users = db.query(func.count(User.id)).filter(User.email.notin_(ADMIN_EMAILS)).scalar()
     total_results = db.query(func.count(Result.id)).scalar()
     total_questions = db.query(func.count(Question.id)).scalar()
-    total_colleges = db.query(func.count(College.id)).scalar()
+    try:
+        from app.utils.college_engine import college_catalogue_count
+        total_colleges = college_catalogue_count()
+    except Exception:
+        total_colleges = db.query(func.count(College.id)).scalar()
 
     level_breakdown = (
         db.query(Result.level, func.count(Result.id))
@@ -607,28 +611,18 @@ def delete_result(result_id: int, db: Session = Depends(get_db), admin=Depends(r
 @router.get("/colleges")
 def list_colleges(
     skip: int = 0,
-    limit: int = 20,
+    limit: int = 50,
     search: Optional[str] = None,
+    state: Optional[str] = None,
     db: Session = Depends(get_db),
     admin=Depends(require_admin)
 ):
-    query = db.query(College)
-    if search:
-        query = query.filter(
-            (College.name.ilike(f"%{search}%")) | (College.state.ilike(f"%{search}%"))
-        )
-    total = query.count()
-    colleges = query.offset(skip).limit(limit).all()
+    from app.utils.college_engine import list_colleges as engine_list, college_state_counts
+    total, colleges = engine_list(search=search, state=state, skip=skip, limit=limit)
     return {
         "total": total,
-        "colleges": [
-            {
-                "id": c.id, "name": c.name, "stream": c.stream, "state": c.state,
-                "type": c.type, "min_percentage": c.min_percentage, "medium": c.medium,
-                "gender": c.gender, "fees_lpa": c.fees_lpa, "ranking": c.ranking
-            }
-            for c in colleges
-        ]
+        "colleges": colleges,
+        "states": college_state_counts(),
     }
 
 
