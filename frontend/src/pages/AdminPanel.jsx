@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as adminService from "../services/adminService";
@@ -1304,6 +1304,8 @@ const CollegesSection = ({ showToast }) => {
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({ name: "", stream: "", state: "", type: "", min_percentage: "", medium: "English", gender: "Co-ed", fees_lpa: "", courses: "", ranking: "" });
   const [confirm, setConfirm] = useState(null);
+  const [groupByState, setGroupByState] = useState(false);
+  const [allColleges, setAllColleges] = useState([]);
   const limit = 10;
 
   const load = useCallback(() => {
@@ -1315,7 +1317,24 @@ const CollegesSection = ({ showToast }) => {
     });
   }, [skip, search]);
 
+  const loadAll = useCallback(() => {
+    const params = { skip: 0, limit: 10000 };
+    if (search) params.search = search;
+    adminService.getColleges(params).then(r => setAllColleges(r.data.colleges || []));
+  }, [search]);
+
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => { if (groupByState) loadAll(); }, [groupByState, loadAll]);
+
+  const groupedByState = useMemo(() => {
+    const map = {};
+    allColleges.forEach(c => {
+      const key = c.state || "Unknown State";
+      (map[key] = map[key] || []).push(c);
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [allColleges]);
 
   const blankForm = { name: "", stream: "", state: "", type: "", min_percentage: "", medium: "English", gender: "Co-ed", fees_lpa: "", courses: "", ranking: "" };
 
@@ -1396,6 +1415,56 @@ const CollegesSection = ({ showToast }) => {
         </button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setGroupByState(g => !g)}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${groupByState ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+        >
+          Group by State
+        </button>
+        <span className="text-xs text-gray-400">
+          {groupByState ? `${allColleges.length} colleges in ${groupedByState.length} states/UTs` : "Browse all colleges grouped by state"}
+        </span>
+      </div>
+
+      {groupByState ? (
+        <div className="space-y-4">
+          {groupedByState.map(([state, list]) => (
+            <div key={state} className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 bg-purple-50/60 border-b border-purple-100/60">
+                <h3 className="font-bold text-gray-800">{state}</h3>
+                <Badge text={`${list.length} ${list.length === 1 ? "college" : "colleges"}`} color="purple" />
+              </div>
+              <div className="divide-y divide-gray-50">
+                {list.map(c => (
+                  <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-800 truncate">{c.name}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {[c.stream, c.type, c.min_percentage ? `${c.min_percentage}% cutoff` : null].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                    </div>
+                    <button onClick={() => {
+                      setSelected(c);
+                      setForm({ name: c.name, stream: c.stream || "", state: c.state || "", type: c.type || "",
+                        min_percentage: c.min_percentage || "", medium: c.medium || "English",
+                        gender: c.gender || "Co-ed", fees_lpa: c.fees_lpa || "", courses: c.courses || "", ranking: c.ranking || "" });
+                      setModal("edit");
+                    }} className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-500">
+                      <Icon name="edit" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          {groupedByState.length === 0 && (
+            <div className="bg-white rounded-3xl border border-purple-100/70 text-center py-16">
+              <p className="text-gray-500 font-medium">No colleges found</p>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="bg-white rounded-3xl shadow-lg shadow-purple-100/40 border border-purple-100/70 overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-purple-50/60 border-b border-purple-100/60">
@@ -1451,7 +1520,9 @@ const CollegesSection = ({ showToast }) => {
           </div>
         )}
       </div>
+      )}
 
+      {!groupByState && (
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>Showing {skip + 1}–{Math.min(skip + limit, total)} of {total}</span>
         <div className="flex gap-2">
@@ -1461,6 +1532,7 @@ const CollegesSection = ({ showToast }) => {
             className="px-3 py-1.5 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next</button>
         </div>
       </div>
+      )}
 
       {modal === "create" && (
         <Modal title="Add College" onClose={() => setModal(null)}>
