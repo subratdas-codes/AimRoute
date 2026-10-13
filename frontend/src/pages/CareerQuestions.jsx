@@ -404,6 +404,8 @@ export default function CareerQuestions() {
 
   // True once the user starts answering — blocks background refresh from resetting the quiz
   const startedRef = useRef(false);
+  // Guards against double-clicks advancing the counter past the real question index
+  const answeringRef = useRef(false);
 
   // ── Bubble state ──────────────────────────────────────────────
   const [bubble, setBubble]   = useState({ visible: false, message: "", targetRect: null, containerRect: null });
@@ -417,12 +419,11 @@ export default function CareerQuestions() {
 
   useEffect(() => {
     let cancelled = false;
-    let quizCount = MAX_QUESTIONS;
 
-    const applyPool = (pool) => {
+    const applyPool = (pool, count) => {
       const ordered = pool.filter(q => !q.is_start);
       if (!ordered.length) return false;
-      const picked = buildQuizFromPool(ordered, quizCount);
+      const picked = buildQuizFromPool(ordered, count);
       setQuestions(picked);
       setCurIdx(0);
       setCurrentQuestion(picked[0] || null);
@@ -430,29 +431,35 @@ export default function CareerQuestions() {
       return true;
     };
 
-    API.get("/quiz/config")
-      .then(r => {
-        if (cancelled) return;
-        const configCount = r.data && r.data[level];
+    const start = async () => {
+      // Resolve the admin-configured question count FIRST so the quiz can never
+      // build with a stale/default length and overshoot.
+      let quizCount = MAX_QUESTIONS;
+      try {
+        const cfgRes = await API.get("/quiz/config");
+        const configCount = cfgRes.data && cfgRes.data[level];
         if (configCount && Number.isFinite(Number(configCount))) {
           quizCount = Math.max(1, Math.min(Number(configCount), 100));
         }
-      })
-      .catch(() => {});
+      } catch { /* fall back to default */ }
+      if (cancelled) return;
 
-    const cachedPool = getQuizCache(level);
-    const usedCache  = cachedPool ? applyPool(cachedPool) : false;
+      const cachedPool = getQuizCache(level);
+      const usedCache = cachedPool ? applyPool(cachedPool, quizCount) : false;
 
-    API.get(`/quiz/?level=${level}`)
-      .then(r => {
+      try {
+        const r = await API.get(`/quiz/?level=${level}`);
         if (cancelled || startedRef.current) return;
-        const allQ  = r.data.questions || r.data;
-        const pool  = allQ.filter(q => !q.is_start);
+        const allQ = r.data.questions || r.data;
+        const pool = allQ.filter(q => !q.is_start);
         setQuizCache(level, pool);
-        applyPool(pool);
-      })
-      .catch(() => { if (!usedCache && !cancelled) { setError("Failed to load questions."); setLoading(false); } });
+        applyPool(pool, quizCount);
+      } catch {
+        if (!usedCache && !cancelled) { setError("Failed to load questions."); setLoading(false); }
+      }
+    };
 
+    start();
     return () => { cancelled = true; };
   }, [level]);
 
@@ -514,6 +521,9 @@ export default function CareerQuestions() {
   };
 
   const handleAnswer = (opt, optionEl) => {
+    if (answeringRef.current) return;
+    if (curIdx >= questions.length) return;
+    answeringRef.current = true;
     startedRef.current = true;
     setSelectedOption(opt.id || opt.option_text);
 
@@ -521,6 +531,7 @@ export default function CareerQuestions() {
     showBubble(optionEl, opt.category_tag);
 
     setTimeout(() => {
+      answeringRef.current = false;
       setSelectedOption(null);
       setBubble(prev => ({ ...prev, visible: false }));
 
@@ -670,10 +681,11 @@ export default function CareerQuestions() {
   );
 
   // ── QUIZ ──────────────────────────────────────────────────────
-  // stepCount = questions already answered. On the final question the
-  // percentage must read 100% (e.g. Q20/20 → 100%), and 0% before Q1.
+  // curIdx = index of the question currently shown (0-based). Progress is derived
+  // from the real index so it can never overshoot the configured question count:
+  // Q1 -> small %, final question -> 100%.
   const progress = questions.length
-    ? Math.min(Math.round(((stepCount + 1) / questions.length) * 100), 100)
+    ? Math.min(Math.round(((curIdx + 1) / questions.length) * 100), 100)
     : 0;
 
   return (
@@ -689,7 +701,7 @@ export default function CareerQuestions() {
                 <span style={{ color: "#7c3aed", fontSize: 11, fontWeight: 600 }}>{LEVEL_NAMES[level] || level}</span>
               </div>
               <div style={{ background: "linear-gradient(135deg,#fce7f3,#ede9fe)", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "5px 14px", color: "#7c3aed", fontSize: 11, fontWeight: 700 }}>
-                Q{stepCount + 1} · {Math.round(progress)}%
+                Q{curIdx + 1} · {Math.round(progress)}%
               </div>
             </div>
             <div style={{ height: 5, background: "#f3e8ff", borderRadius: 99, overflow: "hidden" }}>
@@ -710,7 +722,7 @@ export default function CareerQuestions() {
 
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#fce7f3,#ede9fe)", border: "1.5px solid #e9d5ff", borderRadius: 99, padding: "3px 12px", marginBottom: 12 }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "linear-gradient(135deg,#e91e8c,#7c3aed)" }} />
-              <span style={{ color: "#7c3aed", fontSize: 10, fontWeight: 700, letterSpacing: "0.5px" }}>QUESTION {stepCount + 1}</span>
+              <span style={{ color: "#7c3aed", fontSize: 10, fontWeight: 700, letterSpacing: "0.5px" }}>QUESTION {curIdx + 1} OF {questions.length}</span>
             </div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a2e", lineHeight: 1.5, marginBottom: 18 }}>
               {currentQuestion.question_text}
