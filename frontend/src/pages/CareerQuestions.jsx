@@ -1,8 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import API from "../services/api";
+import { getQuizCache, setQuizCache } from "../services/quizCache";
 import { useAuth }  from "../context/AuthContext";
 import Footer from "../components/Footer";
+
+function buildQuizFromPool(pool) {
+  const ordered = pool.slice();
+  for (let i = ordered.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+  }
+  return ordered.slice(0, 12 + Math.floor(Math.random() * 5)); // 12–16 random questions
+}
 
 const MAX_QUESTIONS = 16;
 
@@ -391,6 +401,9 @@ export default function CareerQuestions() {
   const [percentageConfirmed, setPercentageConfirmed] = useState(false);
   const [selectedOption, setSelectedOption]           = useState(null);
 
+  // True once the user starts answering — blocks background refresh from resetting the quiz
+  const startedRef = useRef(false);
+
   // ── Bubble state ──────────────────────────────────────────────
   const [bubble, setBubble]   = useState({ visible: false, message: "", targetRect: null, containerRect: null });
   const cardRef               = useRef(null);
@@ -402,21 +415,33 @@ export default function CareerQuestions() {
     : null;
 
   useEffect(() => {
+    let cancelled = false;
+
+    const applyPool = (pool) => {
+      const ordered = pool.filter(q => !q.is_start);
+      if (!ordered.length) return false;
+      const picked = buildQuizFromPool(ordered);
+      setQuestions(picked);
+      setCurIdx(0);
+      setCurrentQuestion(picked[0] || null);
+      setLoading(false);
+      return true;
+    };
+
+    const cachedPool = getQuizCache(level);
+    const usedCache  = cachedPool ? applyPool(cachedPool) : false;
+
     API.get(`/quiz/?level=${level}`)
       .then(r => {
+        if (cancelled || startedRef.current) return;
         const allQ  = r.data.questions || r.data;
         const pool  = allQ.filter(q => !q.is_start);
-        for (let i = pool.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [pool[i], pool[j]] = [pool[j], pool[i]];
-        }
-        const ordered = pool.slice(0, 12 + Math.floor(Math.random() * 5)); // 12–16 random questions
-        setQuestions(ordered);
-        setCurIdx(0);
-        setCurrentQuestion(ordered[0] || null);
-        setLoading(false);
+        setQuizCache(level, pool);
+        applyPool(pool);
       })
-      .catch(() => { setError("Failed to load questions."); setLoading(false); });
+      .catch(() => { if (!usedCache && !cancelled) { setError("Failed to load questions."); setLoading(false); } });
+
+    return () => { cancelled = true; };
   }, [level]);
 
   useEffect(() => {
@@ -477,6 +502,7 @@ export default function CareerQuestions() {
   };
 
   const handleAnswer = (opt, optionEl) => {
+    startedRef.current = true;
     setSelectedOption(opt.id || opt.option_text);
 
     // Show bubble immediately on click

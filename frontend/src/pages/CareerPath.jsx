@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
+import API from "../services/api";
+import { prefetchQuizCache } from "../services/quizCache";
 import Footer from "../components/Footer";
 
 const LEVELS = [
@@ -48,6 +50,10 @@ export default function CareerPath() {
         card.style.transform = "translateY(0)";
       });
     });
+  }, []);
+
+  useEffect(() => {
+    prefetchQuizCache(LEVELS.map(l => l.value), API);
   }, []);
 
   return (
